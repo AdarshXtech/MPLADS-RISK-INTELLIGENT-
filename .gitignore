@@ -1,0 +1,22 @@
+.env
+.env.*
+!.env.example
+
+# Local MCP authentication and browser state must never be committed.
+.auth/
+playwright/.auth/
+
+# Original exports and derived observations stay local unless sharing is approved.
+data/raw/
+data/processed/
+data/review/
+output/
+tmp/
+.local/
+.playwright-mcp/
+frontend/test-results/
+frontend/playwright-report/
+**/__pycache__/
+**/.pytest_cache/
+**/.ruff_cache/
+**/.venv/

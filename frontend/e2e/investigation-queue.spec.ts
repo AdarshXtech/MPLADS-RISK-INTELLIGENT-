@@ -1,0 +1,124 @@
+import { expect, test } from "@playwright/test";
+
+test("reviewer can filter, paginate, inspect evidence and save an action", async ({ page }, testInfo) => {
+  const candidateNumber = { chromium: 1, firefox: 2, webkit: 3 }[testInfo.project.name] ?? 1;
+  await page.goto("/command-centre");
+  await expect(page).toHaveURL(/\/login/);
+  await page.goto("/investigation-queue");
+  await expect(page).toHaveURL(/\/login/);
+
+  await page.getByLabel("Username").fill("wrong");
+  await page.getByLabel("Password").fill("wrong");
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByText("The username or password is incorrect.", { exact: true })).toBeVisible();
+
+  await page.getByLabel("Username").fill(process.env.MPLADS_E2E_USERNAME!);
+  await page.getByLabel("Password").fill(process.env.MPLADS_E2E_PASSWORD!);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByRole("heading", { name: "Investigation Queue" })).toBeVisible();
+
+  await page.getByLabel("Order by").selectOption("state");
+  await page.getByRole("button", { name: "Apply filters" }).click();
+  await expect(page).toHaveURL(/sort=state/);
+  await expect(page.locator(".queue-table tbody tr").first()).toContainText("Test State One");
+  await page.getByRole("link", { name: "Next" }).click();
+  await expect(page).toHaveURL(/sort=state/);
+  await expect(page.locator(".queue-table tbody tr").first()).toContainText("Test State Two");
+
+  await expect(page.getByText("Page 2 of 2")).toBeVisible();
+  await page.getByRole("link", { name: "Previous" }).click();
+  await page.getByLabel("Search evidence").fill(`hall ${candidateNumber}`);
+  await page.getByLabel("State").selectOption(candidateNumber % 2 ? "Test State One" : "Test State Two");
+  await page.getByLabel("Review status").selectOption("NEW");
+  await page.getByRole("button", { name: "Apply filters" }).click();
+  await expect(page.locator(".queue-table").getByText(`Synthetic community hall ${candidateNumber}`, { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Review evidence" }).first().click();
+  await expect(page.getByRole("heading", { name: "Why this was flagged" })).toBeVisible();
+  await expect(page.locator(".always-cards .source-card")).toHaveCount(2);
+  await expect(page.locator(".always-cards .source-card").first()).toBeVisible();
+  await page.getByLabel("Next status").selectOption("UNDER_REVIEW");
+  await page.getByLabel("Decision, required when resolving or dismissing").selectOption("");
+  await page.getByLabel("Reason code, required when dismissing").selectOption("");
+  await page.getByLabel("Documents checked").fill("Synthetic sanction record");
+  await page.getByLabel("Evidence references").fill("Synthetic reference 1");
+  await page.getByLabel("Reviewer notes").fill("Browser-test review only");
+  await page.getByRole("button", { name: "Save review action" }).click();
+  await expect(page.getByRole("status")).toContainText("saved");
+  await expect(page.getByText("new to under review")).toBeVisible();
+  await page.getByRole("link", { name: "Back to Investigation Queue" }).click();
+  await page.getByRole("link", { name: "Clear" }).click();
+  await page.getByRole("link", { name: "Command Centre" }).click();
+  await expect(page.getByRole("heading", { name: "Risk Command Centre" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Investigation workload" })).toBeVisible();
+  await expect(page.locator(".workload-panel").getByText("25", { exact: true }).first()).toBeVisible();
+  await page.getByRole("link", { name: "Open Investigation Queue" }).click();
+  await expect(page.getByRole("heading", { name: "Investigation Queue" })).toBeVisible();
+  await page.getByRole("link", { name: "Command Centre" }).click();
+  await page.getByRole("link", { name: "Data Quality" }).click();
+  await expect(page).toHaveURL(/#data-quality$/);
+});
+
+test("filtered CSV downloads all pages and reports failures without leaving the queue", async ({ page }) => {
+  const unauthenticated = await page.request.get("/investigation-queue/export");
+  expect(unauthenticated.status()).toBe(401);
+  expect(unauthenticated.headers()["cache-control"]).toContain("no-store");
+  await page.goto("/login");
+  await page.getByLabel("Username").fill(process.env.MPLADS_E2E_USERNAME!);
+  await page.getByLabel("Password").fill(process.env.MPLADS_E2E_PASSWORD!);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByRole("heading", { name: "Investigation Queue" })).toBeVisible();
+  await page.getByRole("link", { name: "Next" }).click();
+  const downloadEvent = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export filtered CSV" }).click();
+  const download = await downloadEvent;
+  expect(download.suggestedFilename()).toBe("investigation-queue.csv");
+  const stream = await download.createReadStream();
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+  const downloadedRows = Buffer.concat(chunks).toString("utf8").trim().split("\r\n");
+  expect(downloadedRows).toHaveLength(26);
+  await expect(page.getByRole("status")).toContainText("download started");
+  await page.getByLabel("State", { exact: true }).selectOption("Test State Two");
+  await page.getByLabel("Search evidence").fill("hall 2");
+  await page.getByRole("button", { name: "Apply filters" }).click();
+  const filtered = await page.request.get("/investigation-queue/export?state=Test+State+Two&query=hall+2&page=2");
+  expect(filtered.status()).toBe(200);
+  const filteredText = await filtered.text();
+  expect(filteredText).toContain("synthetic-candidate-20,Test State Two");
+  expect(filteredText).not.toContain("Test State One");
+  expect(filteredText).not.toContain("synthetic-candidate-04");
+  await page.route("**/investigation-queue/export?*", async (route) => {
+    await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "Synthetic service unavailable. Retry." }) });
+  });
+  await page.getByRole("button", { name: "Export filtered CSV" }).click();
+  await expect(page.getByText("Synthetic service unavailable. Retry.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Export filtered CSV" })).toBeEnabled();
+  await page.unroute("**/investigation-queue/export?*");
+  await page.getByLabel("Search evidence").fill("no-matching-record");
+  await page.getByRole("button", { name: "Apply filters" }).click();
+  await expect(page.getByRole("heading", { name: "No candidates match these filters" })).toBeVisible();
+  const empty = await page.request.get("/investigation-queue/export?query=no-matching-record");
+  expect((await empty.text()).trim().split("\r\n")).toHaveLength(1);
+});
+
+test("queue supports keyboard focus and a phone layout", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/login");
+  await page.keyboard.press("Tab");
+  await expect(page.getByLabel("Username")).toBeFocused();
+  await page.getByLabel("Username").fill(process.env.MPLADS_E2E_USERNAME!);
+  await page.getByLabel("Password").fill(process.env.MPLADS_E2E_PASSWORD!);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByRole("heading", { name: "Investigation Queue" })).toBeVisible();
+  await page.goto("/investigation-queue?sort=unsupported");
+  await expect(page.getByLabel("Order by")).toHaveValue("group_smallest");
+  await expect(page.getByRole("heading", { name: "Candidates requiring review" })).toBeVisible();
+  await expect(page.locator(".candidate-card").first()).toBeVisible();
+  await expect(page.locator(".queue-table-wrap")).toBeHidden();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await page.setViewportSize({ width: 768, height: 1024 });
+  await expect(page.locator(".queue-table-wrap")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(/\/login/);
+});

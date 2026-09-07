@@ -1,0 +1,32 @@
+[mcp_servers.context7_docs]
+url = "https://mcp.context7.com/mcp"
+bearer_token_env_var = "CONTEXT7_API_KEY"
+startup_timeout_sec = 30
+tool_timeout_sec = 60
+required = false
+default_tools_approval_mode = "auto"
+
+[mcp_servers.playwright]
+command = "npx"
+args = [
+  "-y",
+  "@playwright/mcp@0.0.80",
+  "--isolated",
+  "--browser=chrome",
+  "--allowed-origins=http://localhost:3000;http://127.0.0.1:3000;http://localhost:8000;http://127.0.0.1:8000",
+]
+startup_timeout_sec = 30
+tool_timeout_sec = 120
+required = false
+default_tools_approval_mode = "auto"
+disabled_tools = ["browser_run_code_unsafe"]
+
+[mcp_servers.stitch_design]
+url = "https://stitch.googleapis.com/mcp"
+env_http_headers = { "X-Goog-Api-Key" = "STITCH_API_KEY" }
+enabled = false
+required = false
+startup_timeout_sec = 30
+tool_timeout_sec = 300
+default_tools_approval_mode = "writes"
+disabled_tools = ["delete_project"]
