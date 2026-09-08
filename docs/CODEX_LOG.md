@@ -5,7 +5,8 @@
 - **Task:** Continue the approved deployment preparation by publishing the reviewed local baseline to the configured GitHub remote.
 - **Action:** Pushed local commit `55db3c3d85b69c2bc06d1f0da1cc4fa93a4c66f9` to the new `origin/master` branch and configured local `master` to track it. The local and remote hashes matched after the push.
 - **Safety:** Used a normal push. No force-push, branch rename/deletion, merge, issue, pull request, repository setting, secret or deployment resource was changed.
-- **Documentation:** Updated deployment readiness and the existing baseline decision to record the completed push. This follow-up documentation commit is pushed normally after verification.
+- **Documentation:** Updated deployment readiness and the existing baseline decision to record the completed baseline push. The documentation follow-up remains local because reusable GitHub authentication was unavailable.
+- **Push issue:** The first follow-up attempt stalled without output and was stopped after remote verification showed no partial update. A non-interactive retry failed explicitly because Git Credential Manager could not provide a GitHub username. GitHub CLI is not installed. Local `master` is ahead of `origin/master`; no credential was exposed or persisted.
 - **Remaining manual decisions:** Confirm whether `master` remains the default branch or should later be renamed to `main`; configure branch protection and collaborator permissions in GitHub; select the private staging host, region, managed PostgreSQL and secret store.
 
 ## 2026-09-08: Prepare the local initial commit for private staging
