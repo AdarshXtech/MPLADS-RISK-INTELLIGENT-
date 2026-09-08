@@ -1,5 +1,11 @@
 # Codex log
 
+## 2026-09-08: Verify GitHub synchronisation
+
+- **Result:** The user completed the pending normal push to `origin/master`. A read-only remote check confirmed local and remote commit `0a02d29bfe0c329226a47d9f39e948b23d6f3689` match exactly, with no ahead/behind difference and a clean working tree.
+- **Safety:** No force-push, branch deletion, merge or repository-setting change occurred. Application tests were not rerun because this verification changed documentation only.
+- **Next deployment gate:** Select the private staging host, region, managed PostgreSQL service and secret store before provider-specific deployment configuration is added.
+
 ## 2026-09-08: Push the initial GitHub baseline
 
 - **Task:** Continue the approved deployment preparation by publishing the reviewed local baseline to the configured GitHub remote.
