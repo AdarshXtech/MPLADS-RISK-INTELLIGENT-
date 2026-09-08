@@ -1,16 +1,16 @@
 # Technical decisions
 
-## 2026-09-08: Create a secret-audited local deployment baseline
+## 2026-09-08: Create and push a secret-audited deployment baseline
 
-- **Status:** Implemented locally; remote push pending.
+- **Status:** Implemented and pushed to `origin/master`.
 - **Problem:** The configured GitHub remote has no branch, while the complete project exists only as untracked workstation files.
-- **Decision and reason:** Create one reviewed local initial commit containing source, tests, reproducible manifests, safe MCP configuration and current documentation. Keep official/raw/processed data, local PostgreSQL state, browser artefacts, environment files and generated output outside Git.
+- **Decision and reason:** Create one reviewed initial commit containing source, tests, reproducible manifests, safe MCP configuration and current documentation, then push it normally to the configured empty GitHub remote. Keep official/raw/processed data, local PostgreSQL state, browser artefacts, environment files and generated output outside Git.
 - **Alternatives considered:** Push immediately; commit official datasets; include the outdated generated PDF; add provider-specific containers and CI before choosing the staging host.
 - **Library selection:** Not applicable. Git and existing ignore rules are sufficient. Ponytail favoured a provider-neutral baseline.
 - **Trade-offs:** The first commit is necessarily larger than normal feature commits because the remote is empty. Generated explanatory output remains local until regenerated from current implementation. Deployment automation is deferred until the target is known.
 - **Performance impact:** No runtime impact.
 - **Maintainability impact:** Root, backend and frontend READMEs now provide project-specific entry points. Dependency lockfiles and tests are versioned.
-- **Security impact:** Candidate files were checked for common private-key, service-token and credential-bearing database URL patterns. Secrets, source exports and database state remain ignored. No remote write occurs without an explicit push.
+- **Security impact:** Candidate files were checked for common private-key, service-token and credential-bearing database URL patterns. Secrets, source exports and database state remain ignored. The push was a normal new-branch push with no force, deletion or repository-setting change.
 - **Affected files:** `.gitignore`, root/backend/frontend READMEs, deployment guidance, decisions and session log; the initial commit includes the existing project baseline.
 
 ## 2026-09-07: Surface protected queue workload and defer provider-specific deployment files

@@ -60,7 +60,7 @@ Do not prefix secrets with `NEXT_PUBLIC_`. For multiple Next.js instances, also 
 Before private staging:
 
 1. Select a hosting target, region and data-handling policy.
-2. Review the local initial Git commit created on 2026-09-08, then push it only after confirming the intended GitHub repository and branch policy.
+2. Review the initial Git baseline pushed to `origin/master` on 2026-09-08, then configure the agreed branch policy before team development.
 3. Provision private PostgreSQL with TLS, backups, restore testing and separate application/administration credentials.
 4. Enter secrets through the hosting platform, never through repository files or build logs.
 5. Load official data securely and verify source hashes, record counts, the 174 current candidate groups and zero unintended review events.
@@ -78,7 +78,7 @@ Before production:
 ## Current blockers
 
 - Hosting provider, domain, region and budget are not selected.
-- The local initial commit is prepared; remote push and branch protection remain pending.
+- The initial baseline is on `origin/master`; the default-branch choice, branch protection and team access policy remain pending.
 - Production identity and role requirements are unavailable.
 - Production PostgreSQL, backups and secure data transfer are unavailable.
 - No staging URL, TLS configuration, monitoring destination or deployment authority has been supplied.
