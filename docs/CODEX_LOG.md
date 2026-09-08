@@ -1,5 +1,15 @@
 # Codex log
 
+## 2026-09-08: Add GitHub Actions CI
+
+- **Task:** Take the next deployment-preparation step after synchronising the repository.
+- **Created:** `.github/workflows/ci.yml`.
+- **Modified:** `frontend/package-lock.json`, `docs/deployment.md`, `docs/decisions.md`, `docs/flow.md`, `docs/techstack.md` and this log.
+- **Implementation:** Added two read-only jobs for pushes and pull requests to `master`, plus manual dispatch. Backend CI uses pinned uv 0.12.10, Python 3.12 and an ephemeral PostgreSQL 17 service for Ruff and all Pytest checks. Frontend CI uses Node.js 22 for ESLint and the existing Playwright-managed production build and nine Chromium, Firefox and WebKit tests. Action dependencies are pinned to current commit hashes. Reconciled npm's optional WASI package metadata after a clean npm 11 install found the committed lock internally inconsistent. No deployment provider, application dependency, GitHub secret or official dataset was added.
+- **Guidance checked:** Current official GitHub service-container and minimum-token-permission documentation, Astral uv GitHub Actions guidance and Playwright CI guidance. Context7 confirmed the current three-browser Playwright installation and execution pattern. Ponytail kept provider-specific deployment and extra CI machinery out of scope.
+- **Verification:** `uv sync --frozen`, Ruff formatting, Ruff lint and all 50 PostgreSQL-backed Pytest tests passed. A clean `npm ci` reported zero vulnerabilities, ESLint passed, the production build succeeded and all nine Playwright tests passed across Chromium, Firefox and WebKit. The hosted GitHub Actions result remains pending until the workflow is pushed.
+- **Known limitations:** Browser tests use the existing synthetic mock API, not a staging URL. Branch protection and hosting remain manual decisions. The workflow validates changes but does not deploy them.
+
 ## 2026-09-08: Verify GitHub synchronisation
 
 - **Result:** The user completed the pending normal push to `origin/master`. A read-only remote check confirmed local and remote commit `0a02d29bfe0c329226a47d9f39e948b23d6f3689` match exactly, with no ahead/behind difference and a clean working tree.

@@ -1,5 +1,18 @@
 # Technical decisions
 
+## 2026-09-08: Add provider-neutral GitHub Actions verification
+
+- **Status:** Implemented locally; the first hosted run requires a normal push.
+- **Problem:** The GitHub baseline exists, but broken backend, database or browser behaviour can still be pushed without an automated check.
+- **Decision and reason:** Add one workflow with two independent jobs. The backend runs Ruff and the complete Pytest suite against an ephemeral PostgreSQL 17 service. The frontend runs ESLint and the existing production-build Playwright suite across Chromium, Firefox and WebKit. Trigger it for `master` pushes, pull requests and manual runs.
+- **Alternatives considered:** Select and deploy to a cloud provider now; add Dockerfiles; run only unit tests; introduce a CI matrix or dependency-update bot. Those choices are unnecessary before the staging host is selected or would weaken the existing integration and browser coverage.
+- **Library selection:** No application library added. GitHub Actions, the official GitHub checkout/setup-node actions and maintained Astral setup-uv action are sufficient. Action revisions and uv are pinned. Context7 and current official GitHub, uv and Playwright guidance were checked. Ponytail kept the workflow to the two existing test boundaries.
+- **Trade-offs:** Playwright installs three browsers on each uncached runner and its current configuration rebuilds Next.js, so the frontend job is slower than lint alone. The workflow tests synthetic browser fixtures, not a deployed environment.
+- **Performance impact:** No runtime impact. CI has 15-minute backend and 30-minute frontend limits.
+- **Maintainability impact:** Existing local commands remain the CI commands. There is no provider-specific deployment logic to maintain.
+- **Security impact:** Workflow permission is limited to `contents: read`. No repository secret or official data is used. The PostgreSQL credential is unique to the run and the service is discarded with its isolated runner. The workflow cannot deploy or mutate repository content.
+- **Affected files:** `.github/workflows/ci.yml`, `frontend/package-lock.json`, `docs/deployment.md`, `docs/decisions.md`, `docs/flow.md`, `docs/techstack.md`, `docs/CODEX_LOG.md`.
+
 ## 2026-09-08: Create and push a secret-audited deployment baseline
 
 - **Status:** Implemented and pushed to `origin/master`.

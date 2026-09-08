@@ -1,10 +1,21 @@
 # Application execution flow
 
-This document describes the implementation that exists in the repository on 2026-09-07. It does not describe planned behaviour as if it were implemented.
+This document describes the implementation that exists in the repository on 2026-09-08. It does not describe planned behaviour as if it were implemented.
 
 ## Current implementation status
 
 The repository contains a Next.js data-readiness command centre, an authenticated Investigation Queue, FastAPI aggregate and review endpoints, standalone inspection/ingestion commands, a deterministic detector command and a read-only human-review CSV export command. One potential-duplicate candidate rule is active. PostgreSQL staging, detector persistence and append-only review history are verified against the project-local PostgreSQL 17.11 service. Composite scores and project profiles remain unimplemented.
+
+## Continuous integration flow
+
+```text
+push or pull request to master, or manual run
+-> GitHub Actions CI
+-> Backend: pinned uv + Python 3.12 -> locked sync -> Ruff -> Pytest -> ephemeral PostgreSQL 17
+-> Frontend: Node.js 22 -> npm ci -> ESLint -> Playwright production build -> Chromium + Firefox + WebKit
+```
+
+The two jobs run independently with `contents: read`. They consume no official source files and perform no deployment. Browser tests use the existing clearly synthetic mock API and runtime-generated test credentials.
 
 ## Frontend entry point
 
@@ -148,6 +159,16 @@ Not implemented. No composite risk score is calculated or displayed. Detector se
 `mplads_review_event` stores append-only transitions, decisions, reasons, documents checked, evidence references, notes, reviewer identity and timestamp. `NEW` is implicit before the first event. Current state is derived from the newest event, so no event or detector row is overwritten. The application role has SELECT/INSERT and no UPDATE permission on this table.
 
 ## Files changed in the current session
+
+- `.github/workflows/ci.yml`
+- `frontend/package-lock.json`
+- `docs/deployment.md`
+- `docs/decisions.md`
+- `docs/flow.md`
+- `docs/techstack.md`
+- `docs/CODEX_LOG.md`
+
+The earlier implementation inventory follows for historical context:
 
 - `.gitignore`, `.env.example`
 - `scripts/postgres.ps1`

@@ -1,6 +1,15 @@
 # Deployment readiness
 
-Updated 2026-09-07. The application is suitable for local development and an access-controlled staging demonstration. It is not ready for a public or departmental production deployment.
+Updated 2026-09-08. The application is suitable for local development and an access-controlled staging demonstration. It is not ready for a public or departmental production deployment.
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on pushes and pull requests to `master`, and can also be started manually. It has read-only repository permission and requires no project secret.
+
+- The backend job installs pinned uv 0.12.10 and Python 3.12, checks Ruff formatting and lint, and runs Pytest against an ephemeral PostgreSQL 17 service. Its database credential is generated from the GitHub run ID and is valid only inside that isolated runner.
+- The frontend job uses Node.js 22, installs the committed npm lock, runs ESLint, builds the production Next.js application through the existing Playwright web server, and runs all nine tests across Chromium, Firefox and WebKit.
+
+Action dependencies are pinned to commit hashes. CI validates the repository only. It has no deployment, database administration, issue, pull-request merge or branch mutation permission.
 
 ## Intended runtime shape
 
@@ -60,7 +69,7 @@ Do not prefix secrets with `NEXT_PUBLIC_`. For multiple Next.js instances, also 
 Before private staging:
 
 1. Select a hosting target, region and data-handling policy.
-2. Review the initial Git baseline pushed to `origin/master` on 2026-09-08, then configure the agreed branch policy before team development.
+2. Push the CI workflow, confirm both jobs pass in GitHub Actions, then require the `Backend` and `Frontend` checks in the agreed branch policy before team development.
 3. Provision private PostgreSQL with TLS, backups, restore testing and separate application/administration credentials.
 4. Enter secrets through the hosting platform, never through repository files or build logs.
 5. Load official data securely and verify source hashes, record counts, the 174 current candidate groups and zero unintended review events.
