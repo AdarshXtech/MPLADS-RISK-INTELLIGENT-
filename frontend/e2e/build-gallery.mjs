@@ -1,0 +1,15 @@
+import { readdir, writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
+
+const root = resolve("../output/responsiveness");
+const entries = [];
+for (const browser of ["chromium", "firefox", "webkit"]) {
+  for (const size of await readdir(resolve(root, browser))) {
+    for (const file of await readdir(resolve(root, browser, size))) {
+      if (file.endsWith(".png")) entries.push({ browser, size, file, path: `${browser}/${size}/${file}` });
+    }
+  }
+}
+const sections = entries.map(({ browser, size, file, path }) => `<article data-browser="${browser}" data-size="${size}"><h2>${file.replace(/\.png$/, "").replaceAll("-", " ")}</h2><p>${browser} / ${size}</p><a href="${path}" target="_blank" rel="noopener"><img loading="lazy" src="${path}" alt="${file} at ${size} in ${browser}"><span>Open full image</span></a></article>`).join("\n");
+await writeFile(resolve(root, "index.html"), `<!doctype html><html lang="en-IN"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>MPLADS responsive UI screenshots</title><style>body{margin:0;padding:24px;font:16px Arial;background:#faf8f8;color:#1a0e3d}h1{font-size:26px}header{max-width:1000px}label{display:inline-block;margin:12px 20px 20px 0}select{padding:10px;font:inherit}main{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:20px}article{padding:16px;border:1px solid #ddd9e2;background:white;min-width:0}h2{font-size:18px}img{width:100%;height:320px;object-fit:contain;object-position:top;background:#eee}a{display:block;padding:8px 0;color:#3d239f}a:focus-visible,select:focus-visible{outline:3px solid #3271ea}[hidden]{display:none}</style><header><h1>MPLADS responsive UI verification</h1><p>Actual screenshots of the running application using clearly labelled synthetic test data. No official review records were changed.</p><p>${entries.length} images. Select a browser and screen size, then open any image to view its full length. The 640-pixel reflow case approximates the available CSS width at 200% zoom on a 1280-pixel screen; it is not a native browser zoom test.</p><label>Browser <select id="browser"><option value="">All browsers</option>${["chromium", "firefox", "webkit"].map((value) => `<option>${value}</option>`).join("")}</select></label><label>Screen size <select id="size"><option value="">All sizes</option>${[...new Set(entries.map((entry) => entry.size))].map((value) => `<option>${value}</option>`).join("")}</select></label><p id="count" role="status"></p></header><main>${sections}</main><script>const browser=document.querySelector('#browser'),size=document.querySelector('#size');function filter(){let count=0;for(const card of document.querySelectorAll('article')){card.hidden=!!((browser.value&&card.dataset.browser!==browser.value)||(size.value&&card.dataset.size!==size.value));if(!card.hidden)count++;}document.querySelector('#count').textContent=count+' images shown';}browser.addEventListener('change',filter);size.addEventListener('change',filter);filter();</script></html>`);
+console.log(`Created gallery with ${entries.length} images: ${root}/index.html`);

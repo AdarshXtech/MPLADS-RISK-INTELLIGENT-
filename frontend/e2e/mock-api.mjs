@@ -3,6 +3,8 @@ import { createServer } from "node:http";
 const workIds = ["SYNTHETIC/1", "SYNTHETIC/2"];
 const statuses = new Map();
 const histories = new Map();
+// Isolated browser-test controls. This server is never imported by the application.
+const scenarios = new Map();
 const candidates = Array.from({ length: 25 }, (_, index) => ({
   result_id: `synthetic-candidate-${String(index + 1).padStart(2, "0")}`,
   detector_name: "Potential duplicate work candidate",
@@ -26,7 +28,22 @@ function send(response, code, body) {
   response.end(JSON.stringify(body));
 }
 
-createServer((request, response) => {
+createServer(async (request, response) => {
+  const pathname = new URL(request.url, "http://127.0.0.1:8012").pathname;
+  if (pathname === "/__scenario" && request.method === "POST") {
+    if (request.headers["x-mplads-review-key"] !== process.env.MPLADS_REVIEW_API_KEY) return send(response, 401, {});
+    let body = "";
+    for await (const chunk of request) body += chunk;
+    const configuration = JSON.parse(body);
+    scenarios.clear();
+    if (configuration.reset) { statuses.clear(); histories.clear(); }
+    for (const [path, value] of Object.entries(configuration.paths ?? {})) scenarios.set(path, value);
+    return send(response, 200, { configured: true });
+  }
+  const scenario = scenarios.get(pathname);
+  if (scenario?.delay) await new Promise((resolve) => setTimeout(resolve, scenario.delay));
+  if (scenario?.status) return send(response, scenario.status, { detail: "Synthetic service failure. Please retry." });
+  if (scenario?.body) return send(response, 200, scenario.body);
   if (request.method === "GET" && request.url === "/data-overview") return send(response, 200, {
     source_batches: 1,
     retained_records: 25,

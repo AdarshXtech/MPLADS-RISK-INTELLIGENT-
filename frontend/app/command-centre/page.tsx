@@ -272,7 +272,7 @@ export default async function CommandCentrePage() {
 
   return (
     <QueueShell username={username} active="command-centre" connected={connected}>
-          <main className="page-content" id="main-content">
+          <main className="page-content" id="main-content" tabIndex={-1}>
             <div className="page-heading-row">
               <div>
                 <p className="eyebrow">Data readiness</p>

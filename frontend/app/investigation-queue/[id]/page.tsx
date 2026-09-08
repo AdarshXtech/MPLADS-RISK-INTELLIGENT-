@@ -23,11 +23,11 @@ export default async function CandidatePage({ params, searchParams }: { params: 
   let item;
   try { item = await getCandidate(id); } catch (error) {
     if (error instanceof Error && error.message === "Investigation candidate not found") notFound();
-    return <QueueShell username={username}><main className="page-content" id="main-content"><section className="error-panel" role="alert"><h1>Candidate unavailable</h1><p>The review service could not load this evidence. Return to the queue and try again.</p><Link className="retry-link" href="/investigation-queue">Return to queue</Link></section></main></QueueShell>;
+    return <QueueShell username={username}><main className="page-content" id="main-content" tabIndex={-1}><section className="error-panel" role="alert"><h1>Candidate unavailable</h1><p>The review service could not load this evidence. Return to the queue and try again.</p><Link className="retry-link" href="/investigation-queue">Return to queue</Link></section></main></QueueShell>;
   }
   const action = updateCandidate.bind(null, item.result_id);
   const matched = item.evidence.matched_values as Record<string, unknown> | undefined;
-  return <QueueShell username={username}><main className="page-content" id="main-content">
+  return <QueueShell username={username}><main className="page-content" id="main-content" tabIndex={-1}>
     <Link className="back-link" href="/investigation-queue">Back to Investigation Queue</Link>
     <div className="page-heading-row"><div><p className="eyebrow">Candidate evidence</p><h1>{item.detector_name}</h1><p className="page-intro">Candidate {item.result_id.slice(0, 12)} · {item.group_size} source records</p></div><span className={`status-chip status-${item.status.toLowerCase()}`}>{statusLabel(item.status)}</span></div>
     {message.saved && <p className="success-message" role="status">Review action saved to the audit history.</p>}

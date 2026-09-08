@@ -17,8 +17,8 @@ Updated 2026-09-07. This table records implemented behaviour only.
 | Candidate search, state/status filters, sorting and pagination | `InvestigationQueuePage` | `GET /investigation-candidates` | `list_candidates()` | Latest reviewable detector run and review events | Fully functional |
 | Candidate evidence and provenance | `app/investigation-queue/[id]` | `GET /investigation-candidates/{result_id}` | `candidate_detail()` | Detector results and staged source records | Fully functional |
 | Review status, decision, evidence notes and history | Candidate detail review form | `POST /investigation-candidates/{result_id}/events` | `add_review_event()` | Append-only `mplads_review_event` | Fully functional |
-| Route loading state | `app/command-centre/loading.tsx` | Pending route fetch | Not applicable | Next.js route streaming | Partially functional: build verified; transient state not retained long enough for live browser assertion |
-| No-source empty state | `Dashboard` | `GET /data-overview` | `read_data_overview()` | Empty PostgreSQL staging result | Partially functional: code/build verified; current database is non-empty |
+| Route loading state | Command Centre and Investigation Queue `loading.tsx` | Pending route fetch | Not applicable | Next.js route streaming | Browser-tested with delayed synthetic API responses and captured screenshots |
+| No-source empty state | `Dashboard` | `GET /data-overview` | `read_data_overview()` | Empty PostgreSQL staging result | Browser-tested with a synthetic empty response; official database remains non-empty |
 | Composite scores and project dossier | Not displayed | Missing | Missing | No supported score model or dossier contract | Missing dependency |
 | Filtered queue CSV export | `ExportButton`, authenticated export route | `GET /investigation-candidates.csv` | `export_candidates()` | All matching candidates, provenance and latest review details | Fully functional, maximum 10,000 groups |
 | Production identity, roles and assignments | Not displayed | Missing | Missing | Approved organisational identity provider unavailable | Missing dependency |

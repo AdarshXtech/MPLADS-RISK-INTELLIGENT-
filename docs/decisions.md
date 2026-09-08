@@ -1,5 +1,31 @@
 # Technical decisions
 
+## 2026-09-08: Repair npm 10 lockfile compatibility
+
+- **Problem:** The first hosted frontend CI failed during `npm ci`. The public annotation only reports exit code 1 and downloading detailed logs returned HTTP 403. Locally, npm 10 reproduces `EUSAGE` with missing `@emnapi/core@1.11.3` and `@emnapi/runtime@1.11.3`; npm 11 had previously accepted the lock.
+- **Decision:** Regenerate only lock metadata through npm 10 `install --package-lock-only`, then check both npm 10 and npm 11. Keep the existing Node.js 22 CI target and strict `npm ci` step.
+- **Alternatives:** Replace CI with `npm install`, bypass peer checks or switch Node versions. These would hide or avoid the inconsistent dependency metadata rather than repair it.
+- **Library selection:** No direct dependency added. npm resolves missing optional WASI dependencies and bundled metadata using the declared dependency graph.
+- **Trade-offs:** npm versions serialise some peer metadata differently. Hosted confirmation still requires a new successful run; the inaccessible remote log prevents claiming an exact remote error match.
+- **Performance impact:** No intended runtime change; clean install retains optional platform selection.
+- **Maintainability impact:** The lock now validates with both package-manager majors tested locally.
+- **Security impact:** No credentials, repository settings or data changed.
+- **Affected files:** `frontend/package-lock.json`, decisions, flow and session log.
+
+## 2026-09-08: Verify responsive layouts through the existing browser suite
+
+- **Decision:** Repair the shared CSS and extend the existing Playwright suite with eight viewport sizes and three-browser screenshot capture. Use a locally generated HTML gallery for reviewing PNGs.
+- **Problem:** Navigation did not wrap on small phones; laptop filter columns had minimum widths exceeding the available workspace; long evidence values and narrow source tables needed safer reflow.
+- **Selected approach and reason:** Reuse native grid/flex wrapping, existing mobile cards and the current test API. Delay the six-column filter layout until 1600 pixels, retain fewer metric columns on tablets and expose source cards when the desktop analysis column is narrow.
+- **Keyboard finding:** A minimal WebKit reproduction confirmed that its default Tab behaviour skips an implicit anchor tab stop. The shared skip link now has explicit `tabIndex=0` and each shell main-content destination has `tabIndex=-1`. The test verifies both link focus and focus transfer after Enter.
+- **Alternatives:** A new component library, a mobile navigation drawer, image-generation mock-ups or changing live official review data. Existing CSS and browser automation cover the requested task.
+- **Library selection:** None added. Ponytail favoured existing CSS, Playwright and Node filesystem/path APIs. Installed Next.js CSS documentation and Context7 Playwright documentation were consulted.
+- **Trade-offs:** Mobile pages remain vertically scrollable because all evidence stays available. Screenshots use clearly labelled synthetic data. The 640-pixel reflow check approximates 200% zoom without claiming a native zoom test.
+- **Performance impact:** No new browser dependency or runtime request. Browser CI runs additional responsive checks; optional screenshots are written only with `CAPTURE_UI=1`.
+- **Maintainability impact:** Shared selectors fix all implemented routes. Test-only response controls make loading/error/empty screenshots reproducible without production test switches.
+- **Security impact:** No official data, credentials or review events are changed. Scenario controls exist only in the loopback test server and require its generated API key.
+- **Affected files:** `frontend/app/globals.css`, shared queue shell and Command Centre/queue/evidence pages, `frontend/e2e/mock-api.mjs`, `frontend/e2e/responsiveness.spec.ts`, `frontend/e2e/build-gallery.mjs`, responsive guide, feature connections, decisions, flow, technology and deployment guides, session log. Generated screenshots remain in ignored `output/responsiveness/`.
+
 ## 2026-09-08: Add provider-neutral GitHub Actions verification
 
 - **Status:** Implemented locally; the first hosted run requires a normal push.

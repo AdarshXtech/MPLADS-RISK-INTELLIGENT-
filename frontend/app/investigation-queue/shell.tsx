@@ -3,7 +3,7 @@ import { logout } from "./actions";
 
 export function QueueShell({ username, children, active = "investigation-queue", connected = true }: { username: string; children: React.ReactNode; active?: "command-centre" | "investigation-queue"; connected?: boolean }) {
   return <>
-    <a className="skip-link" href="#main-content">Skip to main content</a>
+    <a className="skip-link" href="#main-content" tabIndex={0}>Skip to main content</a>
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand"><span className="brand-mark" aria-hidden="true">M</span><div><p className="brand-name">MPLADS RISK</p><p className="brand-context">Monitoring support</p></div></div>

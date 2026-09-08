@@ -1,5 +1,22 @@
 # Codex log
 
+## 2026-09-08: Investigate frontend CI installation failure
+
+- **Evidence:** GitHub run `34249019121` at `4e2ebf5` reports Backend success and Frontend failure in Install locked dependencies. The annotation reports exit code 1; detailed logs require authentication (HTTP 403).
+- **Reproduction and change:** npm 10.9.9 locally rejected the lock with missing `@emnapi/core@1.11.3` and `@emnapi/runtime@1.11.3`. Regenerated `frontend/package-lock.json` using npm 10 without changing direct dependencies or weakening `npm ci`. Dry-run lock validation then passed with npm 10.9.9 and npm 11.6.2. Local checks use Windows and Node.js 24.13.0; hosted CI uses Linux and Node.js 22, so local success is not a hosted-run result.
+- **Files:** Frontend lockfile, decisions, flow and this log. The previously tested responsiveness changes remain intact.
+- **Verification:** Clean npm 10 installation, ESLint and production build passed. All 45 Playwright tests passed across Chromium, Firefox and WebKit (3.9 minutes). Prepared one local commit including the previously verified responsive work and this lock repair. A new hosted run is still needed to confirm the remote failure is resolved. No push or deployment was performed.
+
+## 2026-09-08: Responsive layouts and scenario screenshots
+
+- **Task:** Improve website responsiveness and provide images of the implemented screens and interaction states.
+- **Created:** `frontend/e2e/responsiveness.spec.ts`, `frontend/e2e/build-gallery.mjs`, `docs/responsive-ui.md`; ignored PNGs under `output/responsiveness/`.
+- **Modified:** Shared CSS; queue shell; Command Centre, queue and candidate evidence page focus targets; synthetic mock API; decisions, flow, feature connections, deployment, techstack and this log.
+- **Implementation:** Wrapping phone navigation and headers, fluid laptop filters, touch-sized actions, tablet/phone metric grids, cards for narrow source columns, long-evidence wrapping and a scrollable desktop sidebar. Explicit skip-link and main-target tab indices fix WebKit keyboard entry and focus transfer. Existing components and platform APIs were reused without adding dependencies.
+- **Scenario coverage:** Eight viewport sizes from 320 to 1920 pixels in Chromium, Firefox and WebKit. Normal routes, sign-in failure, empty/filtered/paginated queues, export pending/error/success, candidate missing/service error, review failure and status transitions, Command Centre empty/error, both route-loading states, recovery links, reduced motion, long values and a 640-pixel reflow/keyboard case. Optional screenshots have a visible synthetic-data label and never modify official review history.
+- **Verification:** ESLint and the production build passed. All 45 Playwright tests passed across Chromium, Firefox and WebKit in the final run (4.5 minutes). Generated 297 scenario PNGs, 99 per browser. Gallery checks passed for browser/size filtering, opening full-resolution PNGs and 320-pixel layout. Representative phone, tablet, laptop, error, loading and long-evidence images were visually inspected. Initial checks exposed Next.js's separate route-announcement alert, so error assertions were scoped to main content. A minimal WebKit page reproduced skipped implicit link focus; explicit tabindex fixed the cause. Removed an unreliable local-file download link in favour of opening the full image. The gallery and images are packaged in `output/mplads-responsive-ui.zip`.
+- **Limitations:** Screenshots use the isolated synthetic API. Responsive viewport emulation and reflow checks do not certify physical devices, native 200% browser zoom or all WCAG criteria. Backend behaviour and data are unchanged; PostgreSQL tests are not rerun for these presentation/test changes. No commit, push or deployment is performed for this task.
+
 ## 2026-09-08: Add GitHub Actions CI
 
 - **Task:** Take the next deployment-preparation step after synchronising the repository.

@@ -8,6 +8,8 @@ The repository contains a Next.js data-readiness command centre, an authenticate
 
 ## Continuous integration flow
 
+The frontend lockfile was reconciled with npm 10 after a locally reproduced clean-install validation failure. Both npm 10 and npm 11 accept the repaired graph. CI continues to use the committed lock through `npm ci`; application request flow is unchanged.
+
 ```text
 push or pull request to master, or manual run
 -> GitHub Actions CI
@@ -18,6 +20,14 @@ push or pull request to master, or manual run
 The two jobs run independently with `contents: read`. They consume no official source files and perform no deployment. Browser tests use the existing clearly synthetic mock API and runtime-generated test credentials.
 
 ## Frontend entry point
+
+### Responsive presentation and screenshot flow
+
+The shared `globals.css` wraps narrow navigation and headers, adapts metric/filter grids to available width, swaps source tables for existing cards in narrow analysis columns and wraps long evidence. The shared skip link receives keyboard focus explicitly and targets a programmatically focusable main element in Command Centre, queue and evidence pages. No API or detector flow changes.
+
+`e2e/responsiveness.spec.ts` -> authenticated loopback mock scenario configuration -> actual Next.js pages -> viewport/control bounds assertions -> optional labelled PNG capture with `CAPTURE_UI=1`. `node e2e/build-gallery.mjs` reads these images and generates the local browser/size-filtered gallery. Loading, empty, failure and review transition fixtures never reach official PostgreSQL.
+
+Session files: shared CSS; mock API; responsive spec; gallery generator; `docs/responsive-ui.md`, feature connections, decisions, flow, techstack, deployment and CODEX_LOG.
 
 ### Filtered queue export
 

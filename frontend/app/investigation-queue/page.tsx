@@ -36,7 +36,7 @@ export default async function InvestigationQueuePage({ searchParams }: { searchP
   try {
     result = await getCandidates(parameters);
   } catch {
-    return <QueueShell username={username}><main className="page-content" id="main-content"><section className="error-panel" role="alert"><h1>Investigation Queue unavailable</h1><p>The review service could not load candidates. Confirm that FastAPI, PostgreSQL and the review service key are configured.</p><Link className="retry-link" href="/investigation-queue">Retry</Link></section></main></QueueShell>;
+    return <QueueShell username={username}><main className="page-content" id="main-content" tabIndex={-1}><section className="error-panel" role="alert"><h1>Investigation Queue unavailable</h1><p>The review service could not load candidates. Confirm that FastAPI, PostgreSQL and the review service key are configured.</p><Link className="retry-link" href="/investigation-queue">Retry</Link></section></main></QueueShell>;
   }
   const preserved = new URLSearchParams();
   for (const key of ["query", "state", "status"] as const) if (supplied[key]) preserved.set(key, supplied[key]);
@@ -44,7 +44,7 @@ export default async function InvestigationQueuePage({ searchParams }: { searchP
   const pageHref = (next: number) => { const nextParams = new URLSearchParams(preserved); nextParams.set("page", String(next)); return `?${nextParams}`; };
   const lastPage = Math.max(1, Math.ceil(result.total / result.page_size));
   return <QueueShell username={username}>
-    <main className="page-content" id="main-content">
+    <main className="page-content" id="main-content" tabIndex={-1}>
       <div className="page-heading-row"><div><p className="eyebrow">Administrative triage</p><h1>Investigation Queue</h1><p className="page-intro">Potential duplicate work groups produced by deterministic matching. Each candidate requires verification.</p></div><p className="view-label">{integer.format(result.total)} candidates</p></div>
       <aside className="notice" aria-label="Interpretation notice"><span className="notice-mark" aria-hidden="true">i</span><div><strong>Screening result, not a finding</strong><p>Confidence confirms that configured fields matched. It does not estimate the probability of misuse or fraud.</p></div></aside>
       <form className="filter-bar" method="get" role="search">
