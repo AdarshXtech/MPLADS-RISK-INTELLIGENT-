@@ -304,3 +304,13 @@
 - **Known limitations:** Field meanings, datatypes, null rates, unique values, examples, anomaly usefulness and quality concerns cannot be measured without the source dataset.
 - **Manual review required:** Place the unchanged MPLADS source dataset in `data/raw/` and rerun Phase 2.
 - **Unresolved issues:** `docs/data-dictionary.md`, `docs/detection-rules.md`, the ingestion pipeline, cleaned output and automated ingestion tests remain blocked by the missing source dataset.
+
+## 2026-09-10: SIH problem and solution research
+
+- **Task:** Research the MPLADS problem, explain the proposed solution and current implementation, and prepare SIH pitch and judge questions for GitHub publication.
+- **Files created:** `docs/research/sih26102-problem-solution-research.md`, `docs/research/sih26102-pitch-and-judge-preparation.md`.
+- **Files modified:** `docs/CODEX_LOG.md`.
+- **Decisions:** Publish only the two research artifacts with portable repository links. Distinguish official scheme sources, provisional SIH wording, documented snapshot measurements and proposed capabilities. Application architecture and execution flow are unchanged.
+- **Verification:** Checked local document links and numbered source-note references; checked the staged diff for whitespace errors. No application code changed, so runtime tests were not required.
+- **Limitations:** Official SIH wording and the complete operative guideline/amendment set remain unverified. Counts are existing documented snapshot measurements, not a new production run. No detector accuracy or financial saving is claimed.
+- **Manual review:** Authenticate the competition statement and validate proposed detectors and rules with departmental reviewers.
