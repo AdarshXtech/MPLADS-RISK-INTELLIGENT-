@@ -13,20 +13,26 @@ Action dependencies are pinned to commit hashes. CI validates the repository onl
 
 ## Intended runtime shape
 
+## Evaluated staging targets
+
+A hybrid staging target is defined and supported:
+- **Frontend:** Next.js 16 deployed to **Cloudflare Workers / Pages** using `@opennextjs/cloudflare` with `nodejs_compat`. Configuration is in `frontend/wrangler.jsonc` and `frontend/open-next.config.ts`.
+- **Backend & Database:** FastAPI and PostgreSQL deployed to **Render** using Blueprint configuration in `render.yaml`.
+- **Complete guide:** Refer to [docs/cloudflare-render-deployment.md](cloudflare-render-deployment.md).
+
 ```text
-HTTPS reverse proxy
--> Next.js frontend (public entry point)
--> FastAPI backend (private network only)
--> PostgreSQL (private network only, encrypted connection)
+HTTPS (Public Internet)
+-> Cloudflare Edge (Next.js SSR via OpenNext)
+-> Server-to-Server HTTPS (with X-MPLADS-Review-Key)
+-> FastAPI backend (Render Web Service)
+-> PostgreSQL (Render Managed Database, encrypted TLS)
 ```
 
-Use one instance of each application for the first staging deployment. The browser must reach only Next.js. Next.js performs server-to-server FastAPI requests, so the review API key and database connection never enter browser JavaScript. Put a maintained reverse proxy or managed ingress in front of Next.js for TLS, request limits and rate limiting. Do not use a static Next.js export because authentication, cookies, Server Actions and request-time rendering require the Node.js server.
-
-No provider-specific Dockerfile or infrastructure file is committed yet. The hosting target affects health checks, secret injection, networking, persistent database setup and build layout. Add those files only after selecting the target.
+Use one instance of each service for staging. The browser reaches only the Cloudflare-hosted Next.js frontend. Next.js performs server-to-server FastAPI requests, so the review API key and database connection never enter browser JavaScript.
 
 ## Required services and commands
 
-PostgreSQL must be provisioned before the applications. Create owner/application roles and tables using the authorised setup described in [ingestion.md](ingestion.md), then transfer and ingest official source files through an approved secure process. Raw government exports and database credentials must not be committed to Git or baked into an image.
+PostgreSQL must be provisioned before the applications. Create owner/application roles and tables using the authorised setup described in [ingestion.md](ingestion.md) or the idempotent utility `uv run python -m backend.init_db`, then transfer and ingest official source files through an approved secure process. Raw government exports and database credentials must not be committed to Git or baked into an image.
 
 Backend build and start:
 
@@ -84,12 +90,7 @@ Before production:
 4. Complete accessibility, performance and security testing on the selected infrastructure.
 5. Obtain formal approval for the dataset scope, detector wording and operational use. Potential duplicate candidates must never be presented as confirmed misuse.
 
-## Current blockers
-
-- Hosting provider, domain, region and budget are not selected.
-- The initial baseline is on `origin/master`; the default-branch choice, branch protection and team access policy remain pending.
-- Production identity and role requirements are unavailable.
-- Production PostgreSQL, backups and secure data transfer are unavailable.
-- No staging URL, TLS configuration, monitoring destination or deployment authority has been supplied.
-
-No deployment was performed in this session. Publishing would require infrastructure choices and external state changes that must be approved explicitly.
+## Current status
+- Cloudflare and Render deployment configuration is defined (`render.yaml`, `frontend/wrangler.jsonc`, `frontend/open-next.config.ts`, `docs/cloudflare-render-deployment.md`).
+- Schema initialisation utility is implemented (`backend/src/backend/init_db.py`).
+- Staging deployment can be initiated following the operational guide. Production identity, role requirements, and formal audit approvals remain required before wider access.

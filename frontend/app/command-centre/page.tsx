@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { requireReviewer } from "@/lib/auth";
-import { getInvestigationSummary, type InvestigationSummary } from "@/lib/investigations";
+import {
+  apiTimeoutMs,
+  getInvestigationSummary,
+  resolveApiBaseUrl,
+  type InvestigationSummary,
+} from "@/lib/investigations";
 import { QueueShell } from "../investigation-queue/shell";
 
 export const metadata: Metadata = { title: "Command Centre" };
@@ -61,12 +66,12 @@ function isOverview(value: unknown): value is DataOverview {
 
 async function getOverview(): Promise<OverviewResult> {
   await connection();
-  const baseUrl = process.env.MPLADS_API_BASE_URL ?? "http://127.0.0.1:8000";
+  const baseUrl = resolveApiBaseUrl();
   try {
     const [response, summary] = await Promise.all([
       fetch(`${baseUrl}/data-overview`, {
         cache: "no-store",
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(apiTimeoutMs()),
       }),
       getInvestigationSummary(),
     ]);

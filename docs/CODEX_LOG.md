@@ -1,5 +1,24 @@
 # Codex log
 
+## 2026-09-09: Configure Cloudflare and Render hybrid staging deployment
+
+- **Task:** Configure deployment to Cloudflare for the Next.js frontend and Render for the FastAPI backend and managed PostgreSQL database.
+- **Created:** `render.yaml`, `backend/src/backend/init_db.py`, `backend/tests/test_init_db.py`, `frontend/wrangler.jsonc`, `frontend/open-next.config.ts`, `docs/cloudflare-render-deployment.md`.
+- **Modified:** `frontend/lib/investigations.ts`, `frontend/app/command-centre/page.tsx`, `frontend/package.json`, `frontend/package-lock.json`, `frontend/.gitignore`, `docs/deployment.md`, `docs/decisions.md`, `docs/flow.md`, and this log.
+- **Implementation:**
+  - Added `render.yaml` Blueprint defining the `mplads-api` Web Service (Python 3.12, `uv sync --frozen --no-dev`, Uvicorn) and `mplads-db` PostgreSQL instance.
+  - Implemented `backend/src/backend/init_db.py` to provide idempotent, atomic creation of all five application tables and indexes.
+  - Configured `@opennextjs/cloudflare` with `wrangler.jsonc` and `open-next.config.ts` for Cloudflare Workers/Pages SSR edge deployment with `nodejs_compat`.
+  - Added `resolveApiBaseUrl()` for URL sanitisation and `apiTimeoutMs()` (default 45s) to handle Render free-tier cold starts gracefully.
+  - Added comprehensive step-by-step documentation in `docs/cloudflare-render-deployment.md`.
+- **Verification:**
+  - `uv run --frozen ruff check src tests` passed with 0 errors.
+  - `uv run --frozen pytest -q` passed with 39 passed, 13 skipped (test DB opt-in).
+  - `npm run lint` passed with 0 errors.
+  - `npm run build` completed successfully.
+  - `npm run build:worker` (`opennextjs-cloudflare build`) successfully built the Cloudflare worker bundle saved in `.open-next/worker.js`.
+- **Limitations:** Staging deployment requires pushing to Git and linking to Cloudflare and Render dashboards as detailed in the operational guide. Official data must be staged from an authorised workstation over TLS; no official data was baked into images or committed to Git.
+
 ## 2026-09-08: Investigate frontend CI installation failure
 
 - **Evidence:** GitHub run `34249019121` at `4e2ebf5` reports Backend success and Frontend failure in Install locked dependencies. The annotation reports exit code 1; detailed logs require authentication (HTTP 403).

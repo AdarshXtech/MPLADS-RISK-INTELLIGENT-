@@ -1,5 +1,17 @@
 # Technical decisions
 
+## 2026-09-09: Deploy frontend to Cloudflare and backend with PostgreSQL to Render
+
+- **Problem:** The staging demonstration requires a live deployment environment with secure separation between public web traffic, administrative backend services, and database storage, without incurring unnecessary cloud hosting costs or fabricating missing data.
+- **Decision:** Deploy the Next.js 16 frontend to Cloudflare Workers / Pages using the `@opennextjs/cloudflare` adapter with `nodejs_compat`. Deploy the FastAPI backend and managed PostgreSQL database to Render using Blueprint specification (`render.yaml`). Provide an idempotent schema initialisation script `backend/src/backend/init_db.py`.
+- **Alternatives considered:** Deploy all tiers on Render (exceeds free single web service tier); deploy backend on Cloudflare Workers (Cloudflare Workers Wasm/Python environment does not support persistent Uvicorn processes or native Psycopg binary sockets); single-server container deployment (adds VPS management overhead).
+- **Library selection:** Added `@opennextjs/cloudflare` and `wrangler` as frontend development dependencies. No runtime dependencies added to the backend; existing standard library, `fastapi`, and `psycopg` are sufficient.
+- **Trade-offs:** Render free tier web services spin down after 15 minutes of inactivity; frontend request timeout is set to 45 seconds (`MPLADS_API_TIMEOUT_MS`) to accommodate cold-start latency. Free Render databases have a 30-day retention limit suitable for ephemeral staging.
+- **Performance impact:** Frontend achieves global low-latency edge delivery via Cloudflare CDN. Server-to-server HTTPS requests to FastAPI are made only for authenticated reviewer routes.
+- **Maintainability impact:** `render.yaml` enables one-click Infrastructure-as-Code recreation on Render. `init_db.py` unifies schema migration across local development, CI, and staging environments.
+- **Security impact:** Database credentials and the `X-MPLADS-Review-Key` secret remain strictly server-side. Browser bundles never receive database strings or internal API keys.
+- **Affected files:** `render.yaml`, `backend/src/backend/init_db.py`, `backend/tests/test_init_db.py`, `frontend/wrangler.jsonc`, `frontend/open-next.config.ts`, `frontend/package.json`, `frontend/package-lock.json`, `frontend/lib/investigations.ts`, `frontend/app/command-centre/page.tsx`, `docs/cloudflare-render-deployment.md`, `docs/deployment.md`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+
 ## 2026-09-08: Repair npm 10 lockfile compatibility
 
 - **Problem:** The first hosted frontend CI failed during `npm ci`. The public annotation only reports exit code 1 and downloading detailed logs returned HTTP 403. Locally, npm 10 reproduces `EUSAGE` with missing `@emnapi/core@1.11.3` and `@emnapi/runtime@1.11.3`; npm 11 had previously accepted the lock.

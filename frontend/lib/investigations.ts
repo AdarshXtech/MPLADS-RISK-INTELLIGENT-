@@ -66,11 +66,25 @@ export type CandidateDetail = Candidate & {
   }>;
 };
 
+export function resolveApiBaseUrl(): string {
+  const raw = process.env.MPLADS_API_BASE_URL ?? "http://127.0.0.1:8000";
+  const trimmed = raw.trim().replace(/\/+$/, "");
+  if (!trimmed) return "http://127.0.0.1:8000";
+  return trimmed.startsWith("http://") || trimmed.startsWith("https://")
+    ? trimmed
+    : `https://${trimmed}`;
+}
+
+export function apiTimeoutMs(): number {
+  const val = Number(process.env.MPLADS_API_TIMEOUT_MS);
+  return Number.isFinite(val) && val > 0 ? val : 45000;
+}
+
 function configuration() {
   const key = process.env.MPLADS_REVIEW_API_KEY;
   if (!key) throw new Error("MPLADS_REVIEW_API_KEY is not configured");
   return {
-    baseUrl: process.env.MPLADS_API_BASE_URL ?? "http://127.0.0.1:8000",
+    baseUrl: resolveApiBaseUrl(),
     key,
   };
 }
@@ -80,7 +94,7 @@ async function requestResponse(path: string, init?: RequestInit): Promise<Respon
   const response = await fetch(`${baseUrl}${path}`, {
     ...init,
     cache: "no-store",
-    signal: AbortSignal.timeout(8000),
+    signal: AbortSignal.timeout(apiTimeoutMs()),
     headers: { "Content-Type": "application/json", "X-MPLADS-Review-Key": key, ...init?.headers },
   });
   if (!response.ok) {

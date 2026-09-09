@@ -19,6 +19,39 @@ push or pull request to master, or manual run
 
 The two jobs run independently with `contents: read`. They consume no official source files and perform no deployment. Browser tests use the existing clearly synthetic mock API and runtime-generated test credentials.
 
+## Staging deployment flow: Cloudflare and Render
+
+The staging deployment architecture separates the public edge frontend from backend compute and storage:
+
+```text
+[Public Client]
+      │
+      ▼ HTTPS
+[Cloudflare Edge Workers / Pages]
+  ├── Next.js 16 SSR via @opennextjs/cloudflare (nodejs_compat)
+  ├── Session validation (HMAC SHA-256 signed cookie)
+  └── Server-to-server request dispatch
+      │
+      ▼ HTTPS (X-MPLADS-Review-Key authenticated)
+[Render Web Service]
+  ├── FastAPI backend (Python 3.12, Uvicorn, uv)
+  ├── require_review_key() validation
+  └── Read-only / append-only SQL execution
+      │
+      ▼ Encrypted TLS
+[Render Managed PostgreSQL]
+  ├── mplads_ingest_batch & mplads_source_record
+  ├── mplads_detector_run & mplads_detector_result
+  └── mplads_review_event (append-only audit history)
+```
+
+1. Cloudflare Workers executes server-rendered Next.js components and Server Actions.
+2. `resolveApiBaseUrl()` sanitises the configured backend host and `apiTimeoutMs()` provides up to 45 seconds to accommodate Render free-tier cold starts.
+3. Server-to-server fetch transmits the `X-MPLADS-Review-Key` header to the Render FastAPI backend.
+4. FastAPI validates the key with `hmac.compare_digest` before accessing PostgreSQL.
+5. All database operations strictly use connection pooling and TLS encryption.
+
+
 ## Frontend entry point
 
 ### Responsive presentation and screenshot flow
