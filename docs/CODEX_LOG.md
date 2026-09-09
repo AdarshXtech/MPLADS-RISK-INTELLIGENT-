@@ -1,5 +1,22 @@
 # Codex log
 
+## 2026-09-09: Repair deployment CI formatting and database initialisation test
+
+- **Task:** Corrected the actual failure in GitHub run `34337368880` after confirming that the earlier frontend `npm ci` failure was already resolved.
+- **Files modified:** `backend/src/backend/init_db.py`, `backend/tests/test_init_db.py`, and this log.
+- **Implementation:** Ruff formatted the database initialisation error message. The PostgreSQL test now gives every `init_db()` connection the same isolated schema through a libpq `search_path` option, verifies idempotent table creation there and removes that temporary schema afterwards. Production database initialisation behaviour is unchanged.
+- **Verification:** Ruff formatting and lint passed. The focused database initialisation tests passed, and the full PostgreSQL-backed backend suite passed with 52 tests. The latest hosted run already confirmed that frontend dependency installation, lint and browser tests pass. A new hosted run is required after this local fix is pushed.
+- **Limitations:** No push or deployment was performed. The local branch contains the verified fix and documentation only.
+
+## 2026-09-09: Update the plain-language system explainer PDF
+
+- **Task:** Updated the existing PDF to explain the implemented MPLADS system and the authorised-official workflow in simple language.
+- **Output:** `output/pdf/mplads-risk-intelligence-explained.pdf`, an ignored nine-page A4 document covering purpose, users, new-data ingestion, the seven-field duplicate-candidate rule, the website review workflow, case states, code flow, current capability and production limitations.
+- **Data integrity:** Used only repository-verified figures and behaviour: six staged CSV report types, 141,717 retained source records, 16,000 sanctioned rows screened and 174 potential-duplicate candidate groups. The document states that candidates require verification and do not prove duplication, misuse or fraud.
+- **Implementation:** Reused the existing output path and generated the PDF with the already available ReportLab runtime. No application dependency, API, database record, detector result or source file changed.
+- **Verification:** Reopened the output with pypdf, confirmed nine non-empty pages and required workflow text, checked for prohibited em dashes, rendered all pages with Poppler and visually inspected them. The first render exposed invisible dark-band labels; these were corrected and the affected pages were rendered and inspected again.
+- **Known limitations:** The PDF describes the current local reviewer login as demonstration-only and clearly marks production government identity, approved automatic data delivery, composite risk scoring and unsupported detectors as unimplemented.
+
 ## 2026-09-09: Configure Cloudflare and Render hybrid staging deployment
 
 - **Task:** Configure deployment to Cloudflare for the Next.js frontend and Render for the FastAPI backend and managed PostgreSQL database.

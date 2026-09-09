@@ -48,7 +48,9 @@ def main() -> None:
         print("MPLADS database tables initialised successfully.")
     except psycopg.Error:
         # Never output driver messages that might contain connection credentials
-        sys.stderr.write("Database initialisation failed. Verify connection and privileges.\n")
+        sys.stderr.write(
+            "Database initialisation failed. Verify connection and privileges.\n"
+        )
         sys.exit(1)
 
 

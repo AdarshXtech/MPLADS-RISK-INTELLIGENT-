@@ -22,30 +22,27 @@ def test_init_db_creates_all_tables_idempotently():
 
     import psycopg
     from psycopg import sql
+    from psycopg.conninfo import make_conninfo
 
     schema = "test_init_db_" + uuid4().hex
-    with (
-        psycopg.connect(os.environ["TEST_DATABASE_URL"], autocommit=True) as connection,
-        connection.transaction(force_rollback=True),
-    ):
+    database_url = os.environ["TEST_DATABASE_URL"]
+    with psycopg.connect(database_url, autocommit=True) as connection:
         connection.execute(sql.SQL("CREATE SCHEMA {}").format(sql.Identifier(schema)))
-        connection.execute(
-            sql.SQL("SET LOCAL search_path TO {}").format(sql.Identifier(schema))
-        )
 
-        # Run initialization twice to verify idempotency
-        init_db(os.environ["TEST_DATABASE_URL"])
-        init_db(os.environ["TEST_DATABASE_URL"])
+    schema_url = make_conninfo(database_url, options=f"-csearch_path={schema}")
+    try:
+        init_db(schema_url)
+        init_db(schema_url)
 
-        # Confirm all required tables exist
-        tables = connection.execute(
-            """
-            SELECT table_name
-            FROM information_schema.tables
-            WHERE table_schema = current_schema()
-            """
-        ).fetchall()
-        table_names = {t[0] for t in tables}
+        with psycopg.connect(schema_url) as connection:
+            tables = connection.execute(
+                """
+                SELECT table_name
+                FROM information_schema.tables
+                WHERE table_schema = current_schema()
+                """
+            ).fetchall()
+            table_names = {table[0] for table in tables}
 
         expected = {
             "mplads_ingest_batch",
@@ -55,3 +52,8 @@ def test_init_db_creates_all_tables_idempotently():
             "mplads_review_event",
         }
         assert expected.issubset(table_names)
+    finally:
+        with psycopg.connect(database_url, autocommit=True) as connection:
+            connection.execute(
+                sql.SQL("DROP SCHEMA {} CASCADE").format(sql.Identifier(schema))
+            )
