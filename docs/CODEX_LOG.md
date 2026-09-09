@@ -1,5 +1,37 @@
 # Codex log
 
+## 2026-09-09: Verify deployed backend and Neon database path
+
+- **Task:** Continued deployment verification after the user confirmed that the backend and database were deployed, and updated the jury playbook with the observed status.
+- **Verification:** The Render API root and `/health` returned HTTP 200. PostgreSQL-backed `/data-overview` returned HTTP 200. Protected `/investigation-summary` returned HTTP 401 without the review key, as expected. No state-changing endpoint was called and no credential was exposed.
+- **Data state:** The deployed data overview returned zero source batches and zero retained records. This verifies the deployed infrastructure path, not completion of official ingestion or availability of the 174 local candidate groups in Neon.
+- **Documentation:** Updated `docs/deployment.md` to distinguish the deployed Render backend and Neon PostgreSQL database from the still-unverified frontend and data staging state.
+- **PDF:** Appended a visually verified deployment-status page to `output/pdf/mplads-jury-question-answer-playbook.pdf`. The document now has 23 non-empty pages and gives the jury-safe deployment answer plus the next verification gate.
+
+## 2026-09-09: Create MPLADS jury question-and-answer playbook
+
+- **Task:** Created an evidence-first jury preparation PDF that answers 18 difficult evaluation questions in several usable forms: a 10-second answer, a 30-second answer, proof to demonstrate, a follow-up response and claims to avoid.
+- **Output:** `output/pdf/mplads-jury-question-answer-playbook.pdf`, a separate 22-page A4 document with a project truth sheet, answer strategy, all requested questions and a five-minute demonstration path.
+- **Project accuracy:** Answers use the implemented scope only: six staged CSV report types, 141,717 retained records, 16,000 sanctioned rows screened, 174 potential-duplicate candidate groups, the seven-field deterministic rule, five PostgreSQL tables, FastAPI, Next.js and the append-only review workflow. The document explicitly identifies composite scoring, labelled model accuracy, offline review synchronisation, production identity and automatic government feeds as unimplemented.
+- **Responsible presentation:** Replaced generic claims about offline-first behaviour, local-language support, connectivity, ministry processes, funding and model accuracy with project-specific answers and clear evidence boundaries. The team-role answer contains marked name placeholders that must be replaced by the presenters because team ownership details were not available.
+- **Verification:** Reopened the final PDF with pypdf, confirmed 22 non-empty pages and all requested headings and project figures, checked for em dashes, non-breaking hyphens and prohibited confirmation wording, rendered all pages with Poppler and visually inspected every page. The cover screenshot remains visibly labelled as synthetic QA data and is captioned accordingly.
+
+## 2026-09-09: Create illustrated project-working PDF
+
+- **Task:** Created a new screenshot-led PDF explaining what the MPLADS Risk Intelligence project is, how its code and data pipeline work, and how an authorised official reviews a candidate.
+- **Output:** `output/pdf/mplads-project-working-illustrated.pdf`, a separate twelve-page A4 guide covering users, CSV ingestion, provenance, PostgreSQL tables, the deterministic detector, detector support boundaries, Next.js and FastAPI request flow, sign-in, Command Centre, Investigation Queue, evidence and append-only review outcomes.
+- **Data integrity and safety:** Used documented implementation facts only: six staged CSV report types, 141,717 retained records, 16,000 sanctioned rows screened, 174 potential-duplicate groups and seven matched fields. The PDF states that candidates require verification, confidence is not probability of misuse, no composite severity score exists, unsupported detectors remain disabled and generative AI cannot create or change risk flags.
+- **Screenshots:** Reused five Chromium captures from the verified responsive QA suite. Each image retains the visible synthetic-test-data label and has an additional caption stating that screenshot values are synthetic QA fixtures, not official MPLADS observations.
+- **Verification:** Reopened the final PDF with pypdf, confirmed twelve non-empty pages and all required project terms, checked for prohibited fraud-confirmation wording and em dashes, rendered all pages with Poppler and visually inspected every page. Reduced the final screenshot crop after the first render exposed a one-page overflow, then confirmed the corrected twelve-page layout.
+
+## 2026-09-09: Create authorised-user guide PDF
+
+- **Task:** Created and then revised a plain-language PDF for authorised officials to explain the working website through verified browser screenshots and describe the current detection model.
+- **Output:** `output/pdf/mplads-authorised-user-guide.pdf`, an ignored nine-page A4 illustrated guide covering sign-in, Command Centre, queue controls, evidence verification, the review form and saved state, the deterministic seven-field rule, model limitations and responsible wording.
+- **Data integrity and safety:** Used only implemented behaviour and repository-verified measurements. The guide states that the 174 groups are verification candidates, confidence represents certainty of the configured match condition, no composite risk score exists, and generative AI cannot create or change flags.
+- **Implementation:** Reused the existing ReportLab PDF styling and five browser captures from the responsive QA suite. Every screenshot retains its visible synthetic-test-data strip and receives an additional explanatory caption. No application dependency, source data, detector result, API or database record changed.
+- **Verification:** Reopened the PDF with pypdf, confirmed nine non-empty pages and required user/model sections, checked prohibited wording and em dashes, rendered every page with Poppler and visually inspected all pages for clipping, overlap and legibility. Adjusted the review-form crop until it showed a complete form and Save action without a partial preceding section.
+
 ## 2026-09-09: Repair deployment CI formatting and database initialisation test
 
 - **Task:** Corrected the actual failure in GitHub run `34337368880` after confirming that the earlier frontend `npm ci` failure was already resolved.

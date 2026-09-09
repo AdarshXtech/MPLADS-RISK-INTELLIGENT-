@@ -1,6 +1,18 @@
 # Deployment readiness
 
-Updated 2026-09-08. The application is suitable for local development and an access-controlled staging demonstration. It is not ready for a public or departmental production deployment.
+Updated 2026-09-09. The backend and PostgreSQL infrastructure are deployed for staging. The application is not ready for a public or departmental production deployment because the deployed database currently contains no staged source batches or detector results, and the production frontend and identity flow are not verified here.
+
+## Verified staging status
+
+Read-only external checks on 2026-09-09 established the following:
+
+- `https://mplads-risk-intelligent.onrender.com/` returned HTTP 200 with the expected FastAPI service identity.
+- `/health` returned HTTP 200 and a healthy status.
+- PostgreSQL-backed `/data-overview` returned HTTP 200, confirming that the deployed backend can execute its database request path.
+- Protected `/investigation-summary` returned HTTP 401 without `X-MPLADS-Review-Key`, which is the expected minimum-access behaviour.
+- `/data-overview` reported zero source batches and zero retained records. The Neon database infrastructure is online, but the six official ingestion batches and reviewable detector run have not yet been verified in the deployed database.
+
+No state-changing endpoint was called during verification. Do not claim that the 141,717 staged records or 174 potential-duplicate groups are live until the deployed endpoints confirm them.
 
 ## Continuous integration
 
@@ -15,9 +27,10 @@ Action dependencies are pinned to commit hashes. CI validates the repository onl
 
 ## Evaluated staging targets
 
-A hybrid staging target is defined and supported:
+A hybrid staging target is defined and partly verified:
 - **Frontend:** Next.js 16 deployed to **Cloudflare Workers / Pages** using `@opennextjs/cloudflare` with `nodejs_compat`. Configuration is in `frontend/wrangler.jsonc` and `frontend/open-next.config.ts`.
-- **Backend & Database:** FastAPI and PostgreSQL deployed to **Render** using Blueprint configuration in `render.yaml`.
+- **Backend:** FastAPI is deployed to **Render**. The public root and health endpoints are responding.
+- **Database:** PostgreSQL is deployed on **Neon** and is reachable through the backend. The deployed database is currently empty according to `/data-overview`.
 - **Complete guide:** Refer to [docs/cloudflare-render-deployment.md](cloudflare-render-deployment.md).
 
 ```text
@@ -25,7 +38,7 @@ HTTPS (Public Internet)
 -> Cloudflare Edge (Next.js SSR via OpenNext)
 -> Server-to-Server HTTPS (with X-MPLADS-Review-Key)
 -> FastAPI backend (Render Web Service)
--> PostgreSQL (Render Managed Database, encrypted TLS)
+-> PostgreSQL (Neon, encrypted TLS)
 ```
 
 Use one instance of each service for staging. The browser reaches only the Cloudflare-hosted Next.js frontend. Next.js performs server-to-server FastAPI requests, so the review API key and database connection never enter browser JavaScript.
