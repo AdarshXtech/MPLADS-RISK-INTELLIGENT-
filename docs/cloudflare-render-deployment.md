@@ -194,6 +194,15 @@ From the `frontend` directory:
 
 ## Operational notes and limitations
 
+### Diagnose reviewer sign-in configuration errors on Cloudflare Workers
+
+The login username and password come from frontend runtime bindings, not PostgreSQL or Render. In the Worker serving the actual website URL, use **Settings > Variables and Secrets** to configure `MPLADS_REVIEW_USERNAME`, `MPLADS_REVIEW_PASSWORD` and `MPLADS_SESSION_SECRET`. Store the password and signing secret as secrets. Variables added only to **Settings > Build** are unavailable at runtime. Deploy the updated bindings before retrying `/login`.
+
+If sign-in still redirects to `error=configuration`, deploy the login diagnostic change and inspect the Worker's runtime logs while submitting one login attempt. Filter for `[mplads-auth]`. The `stage` distinguishes credential checking from session creation. A `false` entry in `configured` identifies an unavailable or empty binding in that running Worker. If all three are `true`, the error category and failed stage require further runtime investigation; do not assume the database or password is responsible. Share only this bounded diagnostic event, not secret values or session cookies.
+
+The reproducible local check is `npm run test:auth:worker` from `frontend`. It uses Playwright Chromium by default; `MPLADS_E2E_BROWSER_CHANNEL=msedge` selects an installed Edge browser when needed. Tests use generated synthetic credentials and local workerd only. Browser-extension `contentscript.js` warnings and unused-preload warnings do not reveal the server-side login exception.
+
+
 - **Render free tier sleep:** Free Render web services spin down after 15 minutes of inactivity. Cloudflare requests will wait up to 45 seconds (`MPLADS_API_TIMEOUT_MS`) for the service to wake up. For zero-downtime staging demonstrations, consider upgrading the web service to Render Starter ($7/month).
 - **Database retention:** Free Render PostgreSQL databases expire after 30 days. Maintain workstation backups or use a persistent plan for long-running staging environments.
 - **Audit retention:** All review decisions in `mplads_review_event` are append-only. Do not truncate this table during routine operations.

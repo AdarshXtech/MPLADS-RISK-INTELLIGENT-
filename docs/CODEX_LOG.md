@@ -1,5 +1,17 @@
 # Codex log
 
+## 2026-09-09: Reproduce Cloudflare login failure and add safe diagnostics
+
+- **Task:** Investigated repeated reviewer-configuration errors after the user reported configuring all frontend runtime variables.
+- **Evidence:** A Playwright request to the supplied `mplads-risk-intelligent.fockss.workers.dev` login with deliberately invalid synthetic credentials redirected to `error=configuration` without a session. The unchanged checkout built with OpenNext and successfully created a session in local workerd with generated synthetic credentials. Database authentication is not part of this login path. The exact deployed binding state and exception are still unknown.
+- **Files created:** `frontend/e2e/cloudflare-auth.mjs`.
+- **Files modified:** `frontend/lib/auth.ts`, `frontend/app/login/actions.ts`, `frontend/package.json`, `frontend/eslint.config.mjs`, `docs/cloudflare-render-deployment.md`, `docs/decisions.md`, `docs/flow.md`, this log.
+- **Implementation:** Added a bounded server diagnostic with failed stage, error category and three binding-presence booleans. Kept authentication, error-page copy and cookie behaviour unchanged. Added a local Worker browser test command and excluded generated Cloudflare bundles from lint.
+- **Tests:** The new Worker regression test first failed because missing configuration emitted no server diagnostic. After the patch, `npm run test:auth:worker` passed all four scenarios: correct/incorrect credentials with complete configuration, missing username, missing password and missing session secret. Assertions verify session presence, HTTP-only/SameSite flags and absence of secret values in logs. Tests used installed Edge through Playwright (`MPLADS_E2E_BROWSER_CHANNEL=msedge`) because bundled Chromium was unavailable. OpenNext production compilation and TypeScript checks passed.
+- **Additional verification:** Frontend ESLint passed after excluding generated Cloudflare output. `git diff --check` passed. Temporary probe scripts and generated credential files were removed; the reusable regression test remains. No frontend layout or controls changed, so the browser checks were limited to the affected login flow.
+- **Environment limitations:** The Playwright MCP is restricted to localhost and rejected the deployed URL; an explicitly approved local Playwright process performed the synthetic live check. The first rebuild encountered a Windows output-directory lock from the running preview; stopping that preview allowed the build to pass. OpenNext warns about limited Windows support. Browser extension console warnings did not identify the server-side failure.
+- **Manual review and unresolved issue:** Deploy the diagnostic patch, reproduce one failed sign-in and inspect the `[mplads-auth]` event in the correct Cloudflare Worker's runtime logs. The patch is diagnostic; hosted authentication is not claimed fixed. No production credentials or database records were used. The user subsequently authorised committing and pushing the patch; the current local branch tracks `origin/main`. Cloudflare must build that branch to receive the diagnostics.
+
 ## 2026-09-09: Repair deployment CI formatting and database initialisation test
 
 - **Task:** Corrected the actual failure in GitHub run `34337368880` after confirming that the earlier frontend `npm ci` failure was already resolved.
