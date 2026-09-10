@@ -1,5 +1,55 @@
 # Codex log
 
+## 2026-09-10: Diagnose deployed login, data and navigation failures
+
+- **Task:** Check the reported login failure, empty website data and non-working navigation on the deployed Vercel frontend and Render backend.
+- **Files modified:** `frontend/app/command-centre/page.tsx`, `frontend/e2e/responsiveness.spec.ts`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+- **Implementation:** Kept the existing architecture, made the Data Quality sidebar link target the rendered empty or service-error panel when the normal source panel is unavailable, and made Retry connection force a fresh server request after fragment navigation.
+- **External verification:** The Vercel login page responded and rejected a synthetic invalid account as incorrect credentials, confirming that the deployed username and password bindings are present. Render `/health` returned healthy. Render `/data-overview` returned zero source batches and zero records.
+- **Tests executed:** `npm run lint` passed. The targeted production-build Playwright responsive-state test passed in Chromium, Firefox and WebKit. The first Chromium run exposed a fragment-navigation retry defect; the retry URL was corrected and the test then passed in all three engines.
+- **Known limitations:** The correct reviewer credential values and presence of the session-signing secret cannot be derived from the website. The deployed Neon database remains empty and cannot show source or detector data.
+- **Manual setup:** Reset the chosen Vercel reviewer credentials if they are unknown, verify the session secret and matching frontend/backend API key, redeploy, then load the six official CSV exports and run the reviewable detector against the Neon database through an authorised connection.
+
+## 2026-09-10: Synchronise latest remote main changes into master
+
+- **Task:** Fetched the latest remote history and merged the two newer `origin/main` commits into the local `master` branch without force-pushing or discarding either branch's work.
+- **Changes received:** Imported the bounded Cloudflare reviewer-login diagnostics, its Worker regression script, and the MPLADS problem research and SIH pitch-preparation documents.
+- **Conflict resolution:** `docs/CODEX_LOG.md` was the only merge conflict. Both the existing deployment/PDF history and the incoming Cloudflare diagnostic history were preserved.
+- **Verification:** Restored locked frontend dependencies with `npm ci`; ESLint passed; the Next.js 16 production build completed and generated `/`, `/login`, `/command-centre`, `/investigation-queue`, the candidate route and export route. npm reported four high-severity audit findings in transitive dependencies; no automatic or forced audit fix was applied.
+- **Repository state:** The synchronisation is committed locally on `master`. It has not been pushed during this task.
+
+## 2026-09-09: Verify deployed backend and Neon database path
+
+- **Task:** Continued deployment verification after the user confirmed that the backend and database were deployed, and updated the jury playbook with the observed status.
+- **Verification:** The Render API root and `/health` returned HTTP 200. PostgreSQL-backed `/data-overview` returned HTTP 200. Protected `/investigation-summary` returned HTTP 401 without the review key, as expected. No state-changing endpoint was called and no credential was exposed.
+- **Data state:** The deployed data overview returned zero source batches and zero retained records. This verifies the deployed infrastructure path, not completion of official ingestion or availability of the 174 local candidate groups in Neon.
+- **Documentation:** Updated `docs/deployment.md` to distinguish the deployed Render backend and Neon PostgreSQL database from the still-unverified frontend and data staging state.
+- **PDF:** Appended a visually verified deployment-status page to `output/pdf/mplads-jury-question-answer-playbook.pdf`. The document now has 23 non-empty pages and gives the jury-safe deployment answer plus the next verification gate.
+
+## 2026-09-09: Create MPLADS jury question-and-answer playbook
+
+- **Task:** Created an evidence-first jury preparation PDF that answers 18 difficult evaluation questions in several usable forms: a 10-second answer, a 30-second answer, proof to demonstrate, a follow-up response and claims to avoid.
+- **Output:** `output/pdf/mplads-jury-question-answer-playbook.pdf`, a separate 22-page A4 document with a project truth sheet, answer strategy, all requested questions and a five-minute demonstration path.
+- **Project accuracy:** Answers use the implemented scope only: six staged CSV report types, 141,717 retained records, 16,000 sanctioned rows screened, 174 potential-duplicate candidate groups, the seven-field deterministic rule, five PostgreSQL tables, FastAPI, Next.js and the append-only review workflow. The document explicitly identifies composite scoring, labelled model accuracy, offline review synchronisation, production identity and automatic government feeds as unimplemented.
+- **Responsible presentation:** Replaced generic claims about offline-first behaviour, local-language support, connectivity, ministry processes, funding and model accuracy with project-specific answers and clear evidence boundaries. The team-role answer contains marked name placeholders that must be replaced by the presenters because team ownership details were not available.
+- **Verification:** Reopened the final PDF with pypdf, confirmed 22 non-empty pages and all requested headings and project figures, checked for em dashes, non-breaking hyphens and prohibited confirmation wording, rendered all pages with Poppler and visually inspected every page. The cover screenshot remains visibly labelled as synthetic QA data and is captioned accordingly.
+
+## 2026-09-09: Create illustrated project-working PDF
+
+- **Task:** Created a new screenshot-led PDF explaining what the MPLADS Risk Intelligence project is, how its code and data pipeline work, and how an authorised official reviews a candidate.
+- **Output:** `output/pdf/mplads-project-working-illustrated.pdf`, a separate twelve-page A4 guide covering users, CSV ingestion, provenance, PostgreSQL tables, the deterministic detector, detector support boundaries, Next.js and FastAPI request flow, sign-in, Command Centre, Investigation Queue, evidence and append-only review outcomes.
+- **Data integrity and safety:** Used documented implementation facts only: six staged CSV report types, 141,717 retained records, 16,000 sanctioned rows screened, 174 potential-duplicate groups and seven matched fields. The PDF states that candidates require verification, confidence is not probability of misuse, no composite severity score exists, unsupported detectors remain disabled and generative AI cannot create or change risk flags.
+- **Screenshots:** Reused five Chromium captures from the verified responsive QA suite. Each image retains the visible synthetic-test-data label and has an additional caption stating that screenshot values are synthetic QA fixtures, not official MPLADS observations.
+- **Verification:** Reopened the final PDF with pypdf, confirmed twelve non-empty pages and all required project terms, checked for prohibited fraud-confirmation wording and em dashes, rendered all pages with Poppler and visually inspected every page. Reduced the final screenshot crop after the first render exposed a one-page overflow, then confirmed the corrected twelve-page layout.
+
+## 2026-09-09: Create authorised-user guide PDF
+
+- **Task:** Created and then revised a plain-language PDF for authorised officials to explain the working website through verified browser screenshots and describe the current detection model.
+- **Output:** `output/pdf/mplads-authorised-user-guide.pdf`, an ignored nine-page A4 illustrated guide covering sign-in, Command Centre, queue controls, evidence verification, the review form and saved state, the deterministic seven-field rule, model limitations and responsible wording.
+- **Data integrity and safety:** Used only implemented behaviour and repository-verified measurements. The guide states that the 174 groups are verification candidates, confidence represents certainty of the configured match condition, no composite risk score exists, and generative AI cannot create or change flags.
+- **Implementation:** Reused the existing ReportLab PDF styling and five browser captures from the responsive QA suite. Every screenshot retains its visible synthetic-test-data strip and receives an additional explanatory caption. No application dependency, source data, detector result, API or database record changed.
+- **Verification:** Reopened the PDF with pypdf, confirmed nine non-empty pages and required user/model sections, checked prohibited wording and em dashes, rendered every page with Poppler and visually inspected all pages for clipping, overlap and legibility. Adjusted the review-form crop until it showed a complete form and Save action without a partial preceding section.
+
 ## 2026-09-09: Reproduce Cloudflare login failure and add safe diagnostics
 
 - **Task:** Investigated repeated reviewer-configuration errors after the user reported configuring all frontend runtime variables.
@@ -304,6 +354,27 @@
 - **Known limitations:** Field meanings, datatypes, null rates, unique values, examples, anomaly usefulness and quality concerns cannot be measured without the source dataset.
 - **Manual review required:** Place the unchanged MPLADS source dataset in `data/raw/` and rerun Phase 2.
 - **Unresolved issues:** `docs/data-dictionary.md`, `docs/detection-rules.md`, the ingestion pipeline, cleaned output and automated ingestion tests remain blocked by the missing source dataset.
+
+## 2026-09-10: Supplied SIH PDF template reconstruction
+
+- **Task:** Correct the presentation to follow the user's supplied six-page PDF instead of the earlier generic design.
+- **Source:** `SIH26102_MPLADS_Risk_Intelligence_Official_Template_Edited.pdf` in Downloads. Original remains unchanged.
+- **Files created:** Local `output/presentations/Innospark-SIH26102-template-matched-v3.pptx` and private extraction, build and preview files under `.tmp/sih-pitch/`.
+- **Files modified:** `docs/research/sih26102-presentation-notes.md` and `docs/CODEX_LOG.md`.
+- **Decisions:** Retain the actual SIH branding, Innospark badge, font families, source layout and slide order. Reconstruct shapes and text natively from the PDF, reuse original logos and create an editable risk-response table. Label unimplemented AI scoring and detector extensions as proposed.
+- **Verification:** Inspected all six source and final slide renders. Package integrity, six-slide count, source-derived Arial/Calibri/Cambria font policy, geometry, native table and re-import checks passed. Application tests were not applicable.
+- **Limitations:** PDF reconstruction does not preserve an unavailable original PPTX master. Minor shadow, curve and text-wrap differences remain. The source Team ID is missing. Desktop PowerPoint verification was not performed.
+- **Manual review:** Add the confirmed Team ID and verify in PowerPoint before submission. No source data, application code, deployment or Git remote changed.
+
+## 2026-09-10: SIH presentation draft
+
+- **Task:** Create the requested six-slide hackathon deck using project evidence and a past SIH presentation reference.
+- **Files created:** Local `output/presentations/mplads-sih26102-pitch-draft-v5.pptx`, `docs/research/sih26102-presentation-notes.md` and private build files under `.tmp/sih-pitch/`.
+- **Files modified:** `docs/CODEX_LOG.md`. No application source, dependency manifest or execution flow changed.
+- **Decisions:** Use editable text, a native process diagram and a native risk-response table. Keep documented counts distinct from unvalidated benefits. Caption the browser screenshot as synthetic. Study the team-published Ourobonics SIH 2025 deck for structure without copying unrelated claims or assets.
+- **Verification:** Six final rendered slides visually inspected. Package, slide count, geometry, font policy, native table and re-import checks passed. Application tests were not applicable. No desktop PowerPoint verification or new detector run was performed.
+- **Limitations:** The old OneDrive PPT remains inaccessible and no matching local deck was found. Its content and team details could not be incorporated. The matching bundled presentation runtime was used because the named dependency-loading tool was unavailable.
+- **Manual review:** Upload the old PPTX, reconcile its content, add confirmed team identifiers and check current SIH submission rules. The generated PPTX is local and ignored by existing Git rules. No push or deployment was performed.
 
 ## 2026-09-10: SIH problem and solution research
 

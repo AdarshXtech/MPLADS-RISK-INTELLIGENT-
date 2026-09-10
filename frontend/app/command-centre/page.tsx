@@ -152,7 +152,7 @@ function SourceRows({ sources }: { sources: SourceReport[] }) {
 function Dashboard({ data, summary }: { data: DataOverview; summary: InvestigationSummary }) {
   if (data.sources.length === 0) {
     return (
-      <section className="empty-panel" aria-labelledby="empty-title">
+      <section className="empty-panel" id="data-quality" aria-labelledby="empty-title">
         <h2 id="empty-title">No staged source reports</h2>
         <p>The data service is connected, but no source batches are available for review.</p>
       </section>
@@ -300,10 +300,10 @@ export default async function CommandCentrePage() {
             </aside>
 
             {result.status === "error" ? (
-              <section className="error-panel" role="alert" aria-labelledby="service-error-title">
+              <section className="error-panel" id="data-quality" role="alert" aria-labelledby="service-error-title">
                 <h2 id="service-error-title">Data service unavailable</h2>
                 <p>The command centre could not read the verified ingestion summary. Confirm that FastAPI and PostgreSQL are running, then retry.</p>
-                <Link className="retry-link" href="/command-centre">Retry connection</Link>
+                <Link className="retry-link" href="/command-centre?retry=1">Retry connection</Link>
               </section>
             ) : (
               <Dashboard data={result.data} summary={result.summary} />

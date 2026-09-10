@@ -1,5 +1,18 @@
 # Technical decisions
 
+## 2026-09-10: Keep Data Quality navigation valid in service-empty and error states
+
+- **Problem:** The sidebar always displayed a Data Quality link, but the `data-quality` target existed only when source data loaded successfully. With the deployed database empty or the service unavailable, the visible link changed the URL without reaching any content.
+- **Decision:** Reuse the existing empty and service-error panels as the Data Quality target in those states. Do not add a new route, client-side navigation or dependency.
+- **Alternatives considered:** Hide the link when data is unavailable, create a separate Data Quality page, or add a client component. These approaches either remove recovery information or add unnecessary scope.
+- **Selected approach and reason:** Add the existing anchor ID to each mutually exclusive state and give the retry link a query parameter so it forces a fresh server request even after fragment navigation. Verify both behaviours through the current Playwright responsive-state test.
+- **Library selection and reason:** Not applicable.
+- **Trade-offs:** In unavailable states the link reaches diagnostic information rather than a source table, because no source data is available to display.
+- **Performance impact:** None.
+- **Maintainability impact:** Two anchor attributes, one explicit retry URL and existing browser coverage keep all command-centre states consistent.
+- **Security impact:** None. No data, credential or API behaviour changes.
+- **Affected files:** `frontend/app/command-centre/page.tsx`, `frontend/e2e/responsiveness.spec.ts`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+
 ## 2026-09-09: Diagnose deployed login failures without logging secrets
 
 - **Problem:** Both credential-check exceptions and session-creation exceptions redirected to the same configuration error without logging the cause. A synthetic invalid login reproduced that error on the supplied Cloudflare URL, while the same checkout successfully authenticated in local workerd with generated test bindings.

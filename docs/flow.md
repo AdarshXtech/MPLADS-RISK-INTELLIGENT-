@@ -1,5 +1,7 @@
 # Application execution flow
 
+The shared Data Quality navigation always resolves to `#data-quality`. When overview data is ready, the target is the ingested-source panel. When the deployed database has no source batches, it is the empty-state panel. When the data service fails, it is the service-error panel. The link therefore reaches useful rendered content in every command-centre state without introducing a separate route. The error-state retry link uses `/command-centre?retry=1`, ensuring that a prior fragment-only navigation cannot prevent a fresh server request.
+
 ## 2026-09-09: Login failure diagnostics
 
 `frontend/app/login/actions.ts:login()` calls `credentialsAreValid()` and then `createSession()` in `frontend/lib/auth.ts`. An exception calls `reportLoginFailure()` with the `credentials` or `session` stage before retaining the existing `/login?error=configuration` redirect. The diagnostic contains only a bounded error category and presence booleans for the username, password and signing-secret runtime bindings. It contains no secret values or submitted form values. Normal invalid credentials still redirect to `error=credentials`; successful sessions retain the existing HTTP-only HMAC cookie.
