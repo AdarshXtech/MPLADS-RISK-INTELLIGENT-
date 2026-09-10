@@ -1,5 +1,15 @@
 # Codex log
 
+## 2026-09-10: Diagnose deployed login, data and navigation failures
+
+- **Task:** Check the reported login failure, empty website data and non-working navigation on the deployed Vercel frontend and Render backend.
+- **Files modified:** `frontend/app/command-centre/page.tsx`, `frontend/e2e/responsiveness.spec.ts`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+- **Implementation:** Kept the existing architecture, made the Data Quality sidebar link target the rendered empty or service-error panel when the normal source panel is unavailable, and made Retry connection force a fresh server request after fragment navigation.
+- **External verification:** The Vercel login page responded and rejected a synthetic invalid account as incorrect credentials, confirming that the deployed username and password bindings are present. Render `/health` returned healthy. Render `/data-overview` returned zero source batches and zero records.
+- **Tests executed:** `npm run lint` passed. The targeted production-build Playwright responsive-state test passed in Chromium, Firefox and WebKit. The first Chromium run exposed a fragment-navigation retry defect; the retry URL was corrected and the test then passed in all three engines.
+- **Known limitations:** The correct reviewer credential values and presence of the session-signing secret cannot be derived from the website. The deployed Neon database remains empty and cannot show source or detector data.
+- **Manual setup:** Reset the chosen Vercel reviewer credentials if they are unknown, verify the session secret and matching frontend/backend API key, redeploy, then load the six official CSV exports and run the reviewable detector against the Neon database through an authorised connection.
+
 ## 2026-09-10: Synchronise latest remote main changes into master
 
 - **Task:** Fetched the latest remote history and merged the two newer `origin/main` commits into the local `master` branch without force-pushing or discarding either branch's work.
@@ -344,6 +354,27 @@
 - **Known limitations:** Field meanings, datatypes, null rates, unique values, examples, anomaly usefulness and quality concerns cannot be measured without the source dataset.
 - **Manual review required:** Place the unchanged MPLADS source dataset in `data/raw/` and rerun Phase 2.
 - **Unresolved issues:** `docs/data-dictionary.md`, `docs/detection-rules.md`, the ingestion pipeline, cleaned output and automated ingestion tests remain blocked by the missing source dataset.
+
+## 2026-09-10: Supplied SIH PDF template reconstruction
+
+- **Task:** Correct the presentation to follow the user's supplied six-page PDF instead of the earlier generic design.
+- **Source:** `SIH26102_MPLADS_Risk_Intelligence_Official_Template_Edited.pdf` in Downloads. Original remains unchanged.
+- **Files created:** Local `output/presentations/Innospark-SIH26102-template-matched-v3.pptx` and private extraction, build and preview files under `.tmp/sih-pitch/`.
+- **Files modified:** `docs/research/sih26102-presentation-notes.md` and `docs/CODEX_LOG.md`.
+- **Decisions:** Retain the actual SIH branding, Innospark badge, font families, source layout and slide order. Reconstruct shapes and text natively from the PDF, reuse original logos and create an editable risk-response table. Label unimplemented AI scoring and detector extensions as proposed.
+- **Verification:** Inspected all six source and final slide renders. Package integrity, six-slide count, source-derived Arial/Calibri/Cambria font policy, geometry, native table and re-import checks passed. Application tests were not applicable.
+- **Limitations:** PDF reconstruction does not preserve an unavailable original PPTX master. Minor shadow, curve and text-wrap differences remain. The source Team ID is missing. Desktop PowerPoint verification was not performed.
+- **Manual review:** Add the confirmed Team ID and verify in PowerPoint before submission. No source data, application code, deployment or Git remote changed.
+
+## 2026-09-10: SIH presentation draft
+
+- **Task:** Create the requested six-slide hackathon deck using project evidence and a past SIH presentation reference.
+- **Files created:** Local `output/presentations/mplads-sih26102-pitch-draft-v5.pptx`, `docs/research/sih26102-presentation-notes.md` and private build files under `.tmp/sih-pitch/`.
+- **Files modified:** `docs/CODEX_LOG.md`. No application source, dependency manifest or execution flow changed.
+- **Decisions:** Use editable text, a native process diagram and a native risk-response table. Keep documented counts distinct from unvalidated benefits. Caption the browser screenshot as synthetic. Study the team-published Ourobonics SIH 2025 deck for structure without copying unrelated claims or assets.
+- **Verification:** Six final rendered slides visually inspected. Package, slide count, geometry, font policy, native table and re-import checks passed. Application tests were not applicable. No desktop PowerPoint verification or new detector run was performed.
+- **Limitations:** The old OneDrive PPT remains inaccessible and no matching local deck was found. Its content and team details could not be incorporated. The matching bundled presentation runtime was used because the named dependency-loading tool was unavailable.
+- **Manual review:** Upload the old PPTX, reconcile its content, add confirmed team identifiers and check current SIH submission rules. The generated PPTX is local and ignored by existing Git rules. No push or deployment was performed.
 
 ## 2026-09-10: SIH problem and solution research
 

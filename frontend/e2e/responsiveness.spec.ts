@@ -126,6 +126,11 @@ for (const size of sizes.filter(({ name }) => ["phone", "tablet", "desktop"].inc
       await scenario(page, { [api]: { status: 503 } });
       await page.goto(route);
       await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
+      if (route === "/command-centre") {
+        await page.getByRole("link", { name: "Data Quality", exact: true }).click();
+        await expect(page).toHaveURL(/#data-quality$/);
+        await expect(page.locator("#data-quality")).toBeVisible();
+      }
       await capture(page, info, size.name, file);
       await scenario(page);
       await page.getByRole("link", { name: /^(Retry|Return to queue|Retry connection)$/ }).click();
@@ -134,6 +139,9 @@ for (const size of sizes.filter(({ name }) => ["phone", "tablet", "desktop"].inc
     await scenario(page, { "/data-overview": { body: { source_batches: 0, retained_records: 0, detail_records: 0, summary_records: 0, rejected_records: 0, records_with_validation_issues: 0, sources: [] } } });
     await page.goto("/command-centre");
     await expect(page.getByRole("heading", { name: "No staged source reports" })).toBeVisible();
+    await page.getByRole("link", { name: "Data Quality", exact: true }).click();
+    await expect(page).toHaveURL(/#data-quality$/);
+    await expect(page.locator("#data-quality")).toBeVisible();
     await capture(page, info, size.name, "17-command-empty");
     for (const [api, route, label, file] of [
       ["/data-overview", "/command-centre", "Loading command centre", "18-command-loading"],
