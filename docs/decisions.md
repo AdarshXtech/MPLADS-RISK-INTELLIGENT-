@@ -1,5 +1,17 @@
 # Technical decisions
 
+## 2026-09-09: Diagnose deployed login failures without logging secrets
+
+- **Problem:** Both credential-check exceptions and session-creation exceptions redirected to the same configuration error without logging the cause. A synthetic invalid login reproduced that error on the supplied Cloudflare URL, while the same checkout successfully authenticated in local workerd with generated test bindings.
+- **Decision:** Retain the existing authentication and user-facing error behaviour. Log the failed stage, a bounded error category and availability booleans for the three login bindings. Never log entered credentials, binding values, cookies or raw exceptions.
+- **Alternatives:** Guess another environment-variable change, rewrite authentication, or log raw exceptions. These either lack evidence or could disclose secrets. The deployed runtime state is not available from browser console warnings.
+- **Library selection:** No new dependency. Reuse installed Wrangler's `unstable_dev` API, Playwright and Node.js assertions for tests of the actual OpenNext Worker bundle.
+- **Trade-offs:** This resolves missing diagnostic information, not the unverified hosted configuration problem. Wrangler's development API may require maintenance when its installed version changes. The smoke test uses Chromium or an explicitly selected compatible browser channel.
+- **Performance:** Failed sign-ins add one small server log entry. Successful sign-ins and ordinary invalid credentials add none. The optional Worker test builds once and starts four local runtime configurations sequentially.
+- **Maintainability:** Add `test:auth:worker` for successful/invalid login and each missing binding. Exclude generated `.open-next` and `.wrangler` output from ESLint after observing the default lint command scan the newly generated bundles.
+- **Security:** Live probing used deliberately invalid synthetic credentials only. Local tests use generated synthetic secrets, verify no session for rejected attempts and assert that secrets do not appear in captured logs. No database or deployed runtime settings were modified. The user separately authorised publishing the tested patch.
+- **Affected files:** `frontend/lib/auth.ts`, `frontend/app/login/actions.ts`, `frontend/e2e/cloudflare-auth.mjs`, `frontend/package.json`, `frontend/eslint.config.mjs`, `docs/cloudflare-render-deployment.md`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+
 ## 2026-09-09: Deploy frontend to Cloudflare and backend with PostgreSQL to Render
 
 - **Problem:** The staging demonstration requires a live deployment environment with secure separation between public web traffic, administrative backend services, and database storage, without incurring unnecessary cloud hosting costs or fabricating missing data.

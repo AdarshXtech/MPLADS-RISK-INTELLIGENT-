@@ -1,5 +1,13 @@
 # Application execution flow
 
+## 2026-09-09: Login failure diagnostics
+
+`frontend/app/login/actions.ts:login()` calls `credentialsAreValid()` and then `createSession()` in `frontend/lib/auth.ts`. An exception calls `reportLoginFailure()` with the `credentials` or `session` stage before retaining the existing `/login?error=configuration` redirect. The diagnostic contains only a bounded error category and presence booleans for the username, password and signing-secret runtime bindings. It contains no secret values or submitted form values. Normal invalid credentials still redirect to `error=credentials`; successful sessions retain the existing HTTP-only HMAC cookie.
+
+`npm run test:auth:worker` builds the OpenNext bundle and runs `e2e/cloudflare-auth.mjs`. The test starts local workerd instances sequentially with generated synthetic bindings, submits the real login form through Playwright, verifies session-cookie behaviour and checks safe diagnostics for each missing binding. The configured API target is local and does not access official data. Test files are confined to temporary directories under ignored `.wrangler` storage and removed after the run.
+
+Session files: frontend auth library, login Server Action, Worker login test, package scripts, generated-output lint exclusions, deployment troubleshooting guide, decisions, this flow record and CODEX_LOG. The live Cloudflare failure remains under investigation until the diagnostic patch is deployed and server logs are inspected.
+
 This document describes the implementation that exists in the repository on 2026-09-08. It does not describe planned behaviour as if it were implemented.
 
 ## Current implementation status

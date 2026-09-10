@@ -7,6 +7,21 @@ import { redirect } from "next/navigation";
 const COOKIE_NAME = "mplads_review_session";
 const SESSION_SECONDS = 8 * 60 * 60;
 
+export function reportLoginFailure(stage: "credentials" | "session", error: unknown): void {
+  // Log binding availability only, never credentials, cookies or raw exceptions.
+  console.error("[mplads-auth]", JSON.stringify({
+    stage,
+    errorType: error instanceof TypeError ? "TypeError"
+      : error instanceof ReferenceError ? "ReferenceError"
+      : error instanceof Error ? "Error" : "UnknownError",
+    configured: {
+      MPLADS_REVIEW_USERNAME: Boolean(process.env.MPLADS_REVIEW_USERNAME),
+      MPLADS_REVIEW_PASSWORD: Boolean(process.env.MPLADS_REVIEW_PASSWORD),
+      MPLADS_SESSION_SECRET: Boolean(process.env.MPLADS_SESSION_SECRET),
+    },
+  }));
+}
+
 function secret(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is not configured`);
