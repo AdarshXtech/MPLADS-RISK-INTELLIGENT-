@@ -1,5 +1,13 @@
 # Codex log
 
+## 2026-09-10: Synchronise latest remote main changes into master
+
+- **Task:** Fetched the latest remote history and merged the two newer `origin/main` commits into the local `master` branch without force-pushing or discarding either branch's work.
+- **Changes received:** Imported the bounded Cloudflare reviewer-login diagnostics, its Worker regression script, and the MPLADS problem research and SIH pitch-preparation documents.
+- **Conflict resolution:** `docs/CODEX_LOG.md` was the only merge conflict. Both the existing deployment/PDF history and the incoming Cloudflare diagnostic history were preserved.
+- **Verification:** Restored locked frontend dependencies with `npm ci`; ESLint passed; the Next.js 16 production build completed and generated `/`, `/login`, `/command-centre`, `/investigation-queue`, the candidate route and export route. npm reported four high-severity audit findings in transitive dependencies; no automatic or forced audit fix was applied.
+- **Repository state:** The synchronisation is committed locally on `master`. It has not been pushed during this task.
+
 ## 2026-09-09: Verify deployed backend and Neon database path
 
 - **Task:** Continued deployment verification after the user confirmed that the backend and database were deployed, and updated the jury playbook with the observed status.
