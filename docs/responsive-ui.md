@@ -19,7 +19,7 @@ The reproducible Playwright suite checks Chromium, Firefox and WebKit at these C
 | Desktop | 1440 x 900 |
 | Large desktop | 1920 x 1080 |
 
-Every size covers sign-in, the populated queue, candidate evidence, a saved review and the Command Centre. Phone, tablet and desktop also cover invalid sign-in; empty and filtered queues; export pending, failure and success; failed review; missing and unavailable candidates; queue and Command Centre service failure/recovery; empty sources; both route loading states; second-page results; verification requested, resolved, reopened and dismissed review states.
+Every size covers sign-in, the populated queue, candidate evidence, a saved review, the Command Centre and the dedicated Data Quality page. Phone, tablet and desktop also cover invalid sign-in; empty and filtered queues; export pending, failure and success; failed review; missing and unavailable candidates; queue, Command Centre and Data Quality service failure/recovery; empty sources; all three route loading states; second-page results; verification requested, resolved, reopened and dismissed review states.
 
 A 640 x 450 case checks keyboard entry through the skip link, reduced-motion preference and long unbroken synthetic evidence. It approximates the CSS width available when zooming a 1280-pixel screen to 200%. It does not certify native browser zoom or physical mobile devices.
 

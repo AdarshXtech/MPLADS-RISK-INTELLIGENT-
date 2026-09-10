@@ -1,5 +1,18 @@
 # Codex log
 
+## 2026-09-10: Open Data Quality as a dedicated page
+
+- **Task:** Fix the reported Data Quality navigation failure, where the sidebar changed the URL fragment but appeared not to open a page.
+- **Root cause:** `QueueShell` linked to `/command-centre#data-quality`, and the browser tests explicitly expected that in-page anchor. The Command Centre therefore remained the active page after the click.
+- **Files created:** `frontend/lib/data-overview.ts`, `frontend/app/data-quality/page.tsx`, `frontend/app/data-quality/loading.tsx`, `frontend/app/data-quality/data-quality-content.tsx`, `frontend/e2e/data-quality-navigation.spec.ts`.
+- **Files modified:** Command Centre, shared queue shell, existing browser suites, PRD, architecture, feature connections, responsive UI guide, decisions, flow and this log.
+- **Implementation:** Added an authenticated `/data-quality` route with its own heading, active navigation state, loading, empty, success, service-error and retry behaviour. Extracted one validated data-overview client and one shared data-quality presentation so the Command Centre and dedicated route use the same source-backed content.
+- **Regression loop:** The new focused browser test first failed because the click produced `/command-centre#data-quality` instead of `/data-quality`. It passed after the route and link change.
+- **Tests executed:** ESLint passed for all changed frontend files. A Next.js production build using the webpack builder completed as part of Playwright. The focused Data Quality navigation test passed in installed Microsoft Edge. Responsive ready-state checks passed at 320 x 568 and 1440 x 900, and desktop loading, empty, error and recovery checks passed. The final focused regression passed again after the last presentation change.
+- **Visual review:** Inspected the generated Data Quality captures at 320 x 568 and 1440 x 900. The page had no detected horizontal overflow or clipped interactive controls, and the correct navigation item was visibly active.
+- **Known limitation:** This local run used installed Microsoft Edge because the Playwright-managed Chromium binary is absent. The complete CI browser matrix was not run locally.
+- **Deployment:** The fix is local and has not been committed, pushed or deployed in this session.
+
 ## 2026-09-10: Diagnose deployed login, data and navigation failures
 
 - **Task:** Check the reported login failure, empty website data and non-working navigation on the deployed Vercel frontend and Render backend.

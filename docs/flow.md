@@ -1,6 +1,8 @@
 # Application execution flow
 
-The shared Data Quality navigation always resolves to `#data-quality`. When overview data is ready, the target is the ingested-source panel. When the deployed database has no source batches, it is the empty-state panel. When the data service fails, it is the service-error panel. The link therefore reaches useful rendered content in every command-centre state without introducing a separate route. The error-state retry link uses `/command-centre?retry=1`, ensuring that a prior fragment-only navigation cannot prevent a fresh server request.
+The shared Data Quality navigation resolves to the protected `/data-quality` route. `DataQualityPage` checks the reviewer session, calls the shared `getDataOverview()` server client and renders the shared ingestion metrics, source reports, validation review, pipeline state and evidence boundaries. Its own loading, empty, success and service-error states keep the navigation destination meaningful. The Command Centre reuses `DataQualityContent` alongside its investigation summary instead of maintaining a second copy of the data-quality presentation.
+
+The decision to use an in-page `#data-quality` target was superseded after direct user feedback showed that the navigation label was understood as a separate page. The separate route gives the destination its own page heading, URL, active navigation state and retry flow.
 
 ## 2026-09-09: Login failure diagnostics
 
