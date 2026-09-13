@@ -4,6 +4,8 @@ test("reviewer can filter, paginate, inspect evidence and save an action", async
   const candidateNumber = { chromium: 1, firefox: 2, webkit: 3 }[testInfo.project.name] ?? 1;
   await page.goto("/command-centre");
   await expect(page).toHaveURL(/\/login/);
+  await page.goto("/data-quality");
+  await expect(page).toHaveURL(/\/login/);
   await page.goto("/investigation-queue");
   await expect(page).toHaveURL(/\/login/);
 
@@ -56,7 +58,10 @@ test("reviewer can filter, paginate, inspect evidence and save an action", async
   await expect(page.getByRole("heading", { name: "Investigation Queue" })).toBeVisible();
   await page.getByRole("link", { name: "Command Centre" }).click();
   await page.getByRole("link", { name: "Data Quality" }).click();
-  await expect(page).toHaveURL(/#data-quality$/);
+  await expect(page).toHaveURL(/\/data-quality$/);
+  await expect(page.getByRole("heading", { name: "Data Quality", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Data Quality" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("heading", { name: "Ingested source reports" })).toBeVisible();
 });
 
 test("filtered CSV downloads all pages and reports failures without leaving the queue", async ({ page }) => {

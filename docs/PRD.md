@@ -39,4 +39,6 @@ Phase 0 is partial. Field inspection, file ingestion and PostgreSQL staging now 
 
 ## Current implementation
 
+The Data Quality navigation now opens a separate authenticated route for source counts, validation issues and provenance. It uses the existing overview endpoint and does not add a risk detector.
+
 The Next.js root redirects to an authenticated, server-rendered Command Centre backed by FastAPI and PostgreSQL. It shows real queue workload by append-only review status alongside ingestion readiness. The backend persists one active deterministic potential-duplicate candidate rule, which produced 174 reviewable groups from the supplied sanctioned-work snapshot. These are verification candidates, not duplicate findings. The queue supports server-side search, state/status filters, sorting, pagination, filtered CSV, evidence/provenance inspection and append-only review transitions. A peer-cost rule remains disabled because its 3,016 calibration candidates were too broad. No composite score or project dossier exists. See [feature connections](feature-connections.md), [actual flow](flow.md), [deployment readiness](deployment.md), [detector rules](detection-rules.md), [data inventory](data-dictionary.md) and [ingestion instructions](ingestion.md).

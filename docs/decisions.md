@@ -1,5 +1,18 @@
 # Technical decisions
 
+## 2026-09-13: Give Data Quality its own route
+
+- **Problem:** The sidebar labelled Data Quality as a destination, but its link opened Command Centre at a fragment. Users reasonably expected a distinct Data Quality page.
+- **Decision:** Replace the fragment link with authenticated `/data-quality`, give it a distinct heading and active navigation state, and reuse the existing verified ingestion, validation, provenance and evidence-boundary view. The prior 2026-09-10 fragment decision is superseded because its navigation model caused confusion.
+- **Alternatives considered:** Rename the sidebar item to a Command Centre section or retain the fragment and adjust scrolling. Those preserve the reported mismatch between destination label and page identity.
+- **Selected approach and reason:** Reuse one server-rendered dashboard component for both routes; Data Quality requests only the overview endpoint, while Command Centre continues to request review counts.
+- **Library selection and reason:** Not applicable; Next.js file-system routing and the existing backend client are sufficient.
+- **Trade-offs:** The two routes share some source-data presentation; a later information-architecture pass may reduce repetition, but no existing dashboard information is removed now.
+- **Performance impact:** Data Quality avoids the investigation-summary request. No browser-side dataset processing or new dependency.
+- **Maintainability impact:** Shared rendering prevents two copies of validation and provenance logic.
+- **Security impact:** Both routes require the same reviewer session. No credentials, API keys or database writes change.
+- **Affected files:** `frontend/app/command-centre/dashboard.tsx`, both route pages, Data Quality loading state, shared shell, Playwright tests, and project documentation.
+
 ## 2026-09-13: Improve reviewer UI readability without changing data or workflows
 
 - **Problem:** Small uppercase labels, aggressive character-level wrapping, long reviewer identifiers and a stretched source panel made the existing pages harder to read across screen sizes. The ingestion totals could also be mistaken for unique projects.

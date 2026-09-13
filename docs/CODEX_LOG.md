@@ -1,5 +1,15 @@
 # Codex log
 
+## 2026-09-13: Separate Data Quality navigation from Command Centre
+
+- **Task:** Fix the Data Quality sidebar link opening Command Centre instead of a distinct page.
+- **Files created:** `frontend/app/command-centre/dashboard.tsx` (shared rendering extracted from the former route file), `frontend/app/data-quality/page.tsx`, `frontend/app/data-quality/loading.tsx`.
+- **Files modified:** `frontend/app/command-centre/page.tsx`, `frontend/app/investigation-queue/shell.tsx`, `frontend/e2e/investigation-queue.spec.ts`, `frontend/e2e/responsiveness.spec.ts`, `docs/PRD.md`, `docs/architecture.md`, `docs/responsive-ui.md`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+- **Decision:** Use a real authenticated route with its own title, loading and error states; reuse the existing source-data view rather than duplicating data logic. Data Quality does not request investigation summary counts.
+- **Tests:** ESLint passed; the production Next.js build ran through Playwright; all 45 Investigation Queue and responsive tests passed across Chromium, Firefox and WebKit. A separate two-scenario Chromium capture run passed and the Data Quality phone and desktop screenshots were inspected.
+- **Limitations:** Source-data sections remain visible on Command Centre too. No backend, database, detector or deployment setting changed.
+- **Manual review:** Verify the new route on the connected staging deployment after the code is pushed. No push or deployment was performed in this session.
+
 ## 2026-09-13: Reviewer interface readability and spacing
 
 - **Task:** Improve character rendering, text placement, spacing and comprehension on the implemented Command Centre, Investigation Queue and candidate evidence routes.

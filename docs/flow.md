@@ -1,8 +1,10 @@
 # Application execution flow
 
+Data Quality navigation now opens the authenticated `/data-quality` route, rather than a fragment on Command Centre. `frontend/app/command-centre/dashboard.tsx` renders the shared source-data view for both routes. Data Quality requests `GET /data-overview` only; Command Centre also requests the protected investigation summary. The Data Quality route has its own title, loading, empty and service-error states, with a retry link back to the same route. The 2026-09-10 fragment flow below is historical and superseded.
+
 The 2026-09-13 presentation pass changes no request or persistence path. Existing Command Centre totals now carry an explicit report-row, not unique-project, explanation with the actual source-batch count. Existing evidence and provenance summaries use plain text separators. CSS preserves word-level wrapping for prose, breaks only long identifiers as needed, and aligns the source panel to its content height.
 
-The shared Data Quality navigation always resolves to `#data-quality`. When overview data is ready, the target is the ingested-source panel. When the deployed database has no source batches, it is the empty-state panel. When the data service fails, it is the service-error panel. The link therefore reaches useful rendered content in every command-centre state without introducing a separate route. The error-state retry link uses `/command-centre?retry=1`, ensuring that a prior fragment-only navigation cannot prevent a fresh server request.
+Historical 2026-09-10 behaviour: Data Quality navigation resolved to `#data-quality` on Command Centre. This was replaced by the dedicated route above.
 
 ## 2026-09-09: Login failure diagnostics
 

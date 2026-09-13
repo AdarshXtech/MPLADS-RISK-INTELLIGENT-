@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { logout } from "./actions";
 
-export function QueueShell({ username, children, active = "investigation-queue", connected = true }: { username: string; children: React.ReactNode; active?: "command-centre" | "investigation-queue"; connected?: boolean }) {
+export function QueueShell({ username, children, active = "investigation-queue", connected = true }: { username: string; children: React.ReactNode; active?: "command-centre" | "investigation-queue" | "data-quality"; connected?: boolean }) {
   return <>
     <a className="skip-link" href="#main-content" tabIndex={0}>Skip to main content</a>
     <div className="app-shell">
@@ -11,7 +11,7 @@ export function QueueShell({ username, children, active = "investigation-queue",
         <nav className="primary-nav" aria-label="Primary navigation">
           <Link className="nav-link" href="/command-centre" aria-current={active === "command-centre" ? "page" : undefined}>Command Centre</Link>
           <Link className="nav-link" href="/investigation-queue" aria-current={active === "investigation-queue" ? "page" : undefined}>Investigation Queue</Link>
-          <Link className="nav-link" href="/command-centre#data-quality">Data Quality</Link>
+          <Link className="nav-link" href="/data-quality" aria-current={active === "data-quality" ? "page" : undefined}>Data Quality</Link>
         </nav>
         <div className="session-status"><span className={`live-state${connected ? "" : " offline"}`}>{connected ? "Data service connected" : "Data service unavailable"}</span><p>Signed in as</p><strong>{username}</strong></div>
       </aside>
