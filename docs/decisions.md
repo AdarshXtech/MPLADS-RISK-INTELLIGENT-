@@ -1,5 +1,18 @@
 # Technical decisions
 
+## 2026-09-13: Improve reviewer UI readability without changing data or workflows
+
+- **Problem:** Small uppercase labels, aggressive character-level wrapping, long reviewer identifiers and a stretched source panel made the existing pages harder to read across screen sizes. The ingestion totals could also be mistaken for unique projects.
+- **Decision:** Use the already-loaded Geist font, increase supporting text sizes, wrap ordinary prose at word boundaries while allowing long identifiers to break, keep the source panel content-height, and label ingestion totals as report rows rather than unique projects. Use simple text separators in evidence and provenance summaries.
+- **Alternatives considered:** Add a component library, redesign the information architecture, change pagination, or introduce charts. None is necessary for this presentation and comprehension fix.
+- **Selected approach and reason:** Adjust existing CSS and copy in the three implemented pages. No application behaviour or data contract changes.
+- **Library selection and reason:** Not applicable. The font was already loaded through Next.js.
+- **Trade-offs:** Larger text increases page height and may wrap more often on narrow screens; existing mobile cards and overflow checks cover this.
+- **Performance impact:** No new dependency, network request or client-side processing.
+- **Maintainability impact:** Reuses established styles and keeps report-grain clarification adjacent to the totals it explains.
+- **Security impact:** None. Authentication, API keys, risk logic and database access are unchanged.
+- **Affected files:** `frontend/app/globals.css`, `frontend/app/command-centre/page.tsx`, `frontend/app/investigation-queue/page.tsx`, `frontend/app/investigation-queue/[id]/page.tsx`, `frontend/e2e/investigation-queue.spec.ts`, `docs/responsive-ui.md`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+
 ## 2026-09-10: Keep Data Quality navigation valid in service-empty and error states
 
 - **Problem:** The sidebar always displayed a Data Quality link, but the `data-quality` target existed only when source data loaded successfully. With the deployed database empty or the service unavailable, the visible link changed the URL without reaching any content.

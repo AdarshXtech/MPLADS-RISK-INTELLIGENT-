@@ -1,5 +1,15 @@
 # Codex log
 
+## 2026-09-13: Reviewer interface readability and spacing
+
+- **Task:** Improve character rendering, text placement, spacing and comprehension on the implemented Command Centre, Investigation Queue and candidate evidence routes.
+- **Files created:** None.
+- **Files modified:** `frontend/app/globals.css`, `frontend/app/command-centre/page.tsx`, `frontend/app/investigation-queue/page.tsx`, `frontend/app/investigation-queue/[id]/page.tsx`, `frontend/e2e/investigation-queue.spec.ts`, `docs/responsive-ui.md`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+- **Implementation decisions:** Reuse the loaded Geist font and existing CSS. Increase small supporting type, limit character-level wrapping to identifiers and long evidence values, remove the stretched Data Quality panel, tighten mobile candidate-card spacing and clarify that aggregate counts are report rows rather than unique projects. No detector, authentication, API or database logic changed.
+- **Tests executed and results:** ESLint passed; focused Chromium phone/desktop responsive scenarios passed; all 45 Investigation Queue and responsive Playwright tests passed across Chromium, Firefox and WebKit.
+- **Known limitations:** Browser screenshots use synthetic fixtures and do not verify every variation of official field content. This is a readability pass, not a new WCAG certification.
+- **Manual review:** Check the deployed Vercel build after pushing to the connected production branch. No deployment or Git push was performed in this session.
+
 ## 2026-09-10: Diagnose deployed login, data and navigation failures
 
 - **Task:** Check the reported login failure, empty website data and non-working navigation on the deployed Vercel frontend and Render backend.

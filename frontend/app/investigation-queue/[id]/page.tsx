@@ -29,7 +29,7 @@ export default async function CandidatePage({ params, searchParams }: { params: 
   const matched = item.evidence.matched_values as Record<string, unknown> | undefined;
   return <QueueShell username={username}><main className="page-content" id="main-content" tabIndex={-1}>
     <Link className="back-link" href="/investigation-queue">Back to Investigation Queue</Link>
-    <div className="page-heading-row"><div><p className="eyebrow">Candidate evidence</p><h1>{item.detector_name}</h1><p className="page-intro">Candidate {item.result_id.slice(0, 12)} · {item.group_size} source records</p></div><span className={`status-chip status-${item.status.toLowerCase()}`}>{statusLabel(item.status)}</span></div>
+    <div className="page-heading-row"><div><p className="eyebrow">Candidate evidence</p><h1>{item.detector_name}</h1><p className="page-intro">Candidate {item.result_id.slice(0, 12)} | {item.group_size} source records</p></div><span className={`status-chip status-${item.status.toLowerCase()}`}>{statusLabel(item.status)}</span></div>
     {message.saved && <p className="success-message" role="status">Review action saved to the audit history.</p>}
     {message.error && <p className="form-error" role="alert">{message.error}</p>}
     <section className="evidence-grid">

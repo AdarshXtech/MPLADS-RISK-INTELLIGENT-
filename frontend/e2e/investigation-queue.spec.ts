@@ -50,6 +50,7 @@ test("reviewer can filter, paginate, inspect evidence and save an action", async
   await page.getByRole("link", { name: "Command Centre" }).click();
   await expect(page.getByRole("heading", { name: "Risk Command Centre" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Investigation workload" })).toBeVisible();
+  await expect(page.getByText("These totals count rows across 1 source report, not unique projects.", { exact: false })).toBeVisible();
   await expect(page.locator(".workload-panel").getByText("25", { exact: true }).first()).toBeVisible();
   await page.getByRole("link", { name: "Open Investigation Queue" }).click();
   await expect(page.getByRole("heading", { name: "Investigation Queue" })).toBeVisible();

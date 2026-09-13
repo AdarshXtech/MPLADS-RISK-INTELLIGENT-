@@ -1,5 +1,7 @@
 # Responsive UI verification
 
+The 2026-09-13 readability pass uses the already-loaded Geist font, larger supporting labels and word-level wrapping for ordinary copy. Long source hashes, Work IDs and reviewer names still wrap safely. The Command Centre source panel no longer stretches to the neighbouring analysis rail, and its aggregate caption explains that report-row totals are not unique projects.
+
 The existing application uses wrapping navigation, fluid filter columns, mobile candidate cards, responsive metric grids and wrapping evidence values. Desktop sidebars scroll when the available height is short. Buttons and primary action links have a minimum 44-pixel height.
 
 The shared skip link is explicitly tabbable, including in WebKit's default keyboard mode. Its main-content destination has `tabIndex=-1` so activation transfers focus without adding a second stop to normal Tab navigation.

@@ -114,7 +114,7 @@ function SourceRows({ sources }: { sources: SourceReport[] }) {
                 <td>
                   <div className="source-name">{source.source_file}</div>
                   <div className="provenance">
-                    SHA-256 {source.source_sha256.slice(0, 12)}... · parser v{source.parser_version}
+                    SHA-256 {source.source_sha256.slice(0, 12)}... | parser v{source.parser_version}
                   </div>
                 </td>
                 <td className="number-cell">{integer.format(source.detail_records)}</td>
@@ -133,7 +133,7 @@ function SourceRows({ sources }: { sources: SourceReport[] }) {
           <article className="source-card" key={`card-${source.source_sha256}-${source.parser_version}`}>
             <h3>{source.source_file}</h3>
             <p className="provenance">
-              SHA-256 {source.source_sha256.slice(0, 12)}... · parser v{source.parser_version}
+              SHA-256 {source.source_sha256.slice(0, 12)}... | parser v{source.parser_version}
             </p>
             <dl>
               <dt>Detail records</dt><dd>{integer.format(source.detail_records)}</dd>
@@ -185,6 +185,7 @@ function Dashboard({ data, summary }: { data: DataOverview; summary: Investigati
         <Metric label="Summary records" value={data.summary_records} note="Retained separately" />
         <Metric label="Rejected records" value={data.rejected_records} note="Preserved when present" />
       </section>
+      <p className="metrics-caption">These totals count rows across {integer.format(data.source_batches)} source {data.source_batches === 1 ? "report" : "reports"}, not unique projects. The same work may appear in more than one report.</p>
 
       <div className="analysis-grid">
         <section className="panel" id="data-quality" aria-labelledby="sources-title">
