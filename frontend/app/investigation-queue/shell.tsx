@@ -13,7 +13,7 @@ export function QueueShell({ username, children, active = "investigation-queue",
           <Link className="nav-link" href="/investigation-queue" aria-current={active === "investigation-queue" ? "page" : undefined}>Investigation Queue</Link>
           <Link className="nav-link" href="/data-quality" aria-current={active === "data-quality" ? "page" : undefined}>Data Quality</Link>
         </nav>
-        <div className="session-status"><span className={`live-state${connected ? "" : " offline"}`}>{connected ? "Data service connected" : "Data service unavailable"}</span><p>Signed in as</p><strong>{username}</strong></div>
+        <div className="session-status"><span className={`live-state${connected ? "" : " offline"}`}>{connected ? "Data service connected" : "Data service unavailable"}</span></div>
       </aside>
       <div className="workspace">
         <header className="utility-bar"><div><p className="utility-label">Review session</p><p className="utility-value">{username}</p></div><form action={logout}><button className="secondary-button" type="submit">Sign out</button></form></header>

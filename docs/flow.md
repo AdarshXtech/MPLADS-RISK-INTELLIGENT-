@@ -1,5 +1,7 @@
 # Application execution flow
 
+On Command Centre, `ReviewerDashboard()` loads the data overview and investigation summary, renders pending review workload directly below the page heading, then renders scope, interpretation notice and source-data sections. The workload link opens `/investigation-queue?status=NEW`; the existing queue route applies that filter to its API request. Data Quality continues to render the source-data view without requesting investigation summary. The authenticated reviewer ID appears in the top utility bar, while the sidebar retains only data-service status.
+
 The optional `backend.near_duplicate` CLI reads the unchanged sanctioned-work CSV with `ingest.inspect_csv`, groups different Work IDs by exact administrative/date/amount context, and computes description similarity for non-identical descriptions. It prints a bounded calibration report without writing PostgreSQL or modifying `backend.detectors.detect()`. The website, latest reviewable run and 174 existing groups are unchanged. Fraud probability remains unavailable.
 
 Data Quality navigation now opens the authenticated `/data-quality` route, rather than a fragment on Command Centre. `frontend/app/command-centre/dashboard.tsx` renders the shared source-data view for both routes. Data Quality requests `GET /data-overview` only; Command Centre also requests the protected investigation summary. The Data Quality route has its own title, loading, empty and service-error states, with a retry link back to the same route. The 2026-09-10 fragment flow below is historical and superseded.
@@ -219,12 +221,12 @@ Not implemented. No composite risk score is calculated or displayed. Detector se
 
 ## Files changed in the current session
 
-- `.github/workflows/ci.yml`
-- `frontend/package-lock.json`
-- `docs/deployment.md`
+- `frontend/app/command-centre/dashboard.tsx`
+- `frontend/app/investigation-queue/shell.tsx`
+- `frontend/app/globals.css`
+- `frontend/e2e/investigation-queue.spec.ts`
 - `docs/decisions.md`
 - `docs/flow.md`
-- `docs/techstack.md`
 - `docs/CODEX_LOG.md`
 
 The earlier implementation inventory follows for historical context:

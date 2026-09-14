@@ -1,5 +1,14 @@
 # Codex log
 
+## 2026-09-14: Command Centre review hierarchy and readability
+
+- **Task:** Correct one-source wording, remove the repeated reviewer ID, name the queue action for pending review, enlarge provenance and validation-chart notes, and raise pending work on Command Centre.
+- **Files created:** None.
+- **Files modified:** `frontend/app/command-centre/dashboard.tsx`, `frontend/app/investigation-queue/shell.tsx`, `frontend/app/globals.css`, `frontend/e2e/investigation-queue.spec.ts`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+- **Implementation:** Reused the existing summary and `NEW` queue filter; placed the workload panel directly after the page heading and made pending review its first count. One-source summary copy now uses the singular. The reviewer ID remains in the utility bar only. Provenance and chart notes use 0.8 rem text.
+- **Verification:** ESLint, `git diff --check` and the production-build Chromium review-flow test passed. Five focused Chromium browser tests passed across 320, 768, 1024 and 1440 px widths. Two additional screenshot-capture tests passed at 320 and 1440 px; both Command Centre images were visually inspected with synthetic test data. The browser test checks singular wording, one visible reviewer ID, section order, the `NEW` queue filter and computed 12.8 px provenance/chart-note text. No official data, detector, database or deployment state changed.
+- **Known limitation:** This run did not recheck Firefox or WebKit. Screenshots are synthetic UI fixtures and do not verify production data.
+
 ## 2026-09-14: Exploratory near-duplicate comparison
 
 - **Task:** Compare sanctioned works beyond exact description matching while avoiding an unsupported fraud probability.

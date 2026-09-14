@@ -1,5 +1,18 @@
 # Technical decisions
 
+## 2026-09-14: Put pending review work first on Command Centre
+
+- **Status:** Implemented.
+- **Decision:** Show the existing investigation workload immediately after the Command Centre heading, lead with the pending-review count, and link directly to the queue's `NEW` status filter. Keep the reviewer ID in the utility bar only. Use singular wording for one staged source report and increase provenance and chart-note text to 0.8 rem.
+- **Problem:** Pending work and its action were below background information; the long reviewer ID appeared twice; small evidence notes were hard to read.
+- **Alternatives considered:** Add a second summary banner, abbreviate the reviewer ID, or introduce a new queue route. Reusing the existing workload panel and status filter keeps one source of truth.
+- **Selected approach and libraries:** Reorder existing server-rendered sections and adjust CSS. No new library.
+- **Trade-offs:** The scope and interpretation notice now follow the workload panel on Command Centre. Data Quality keeps its existing order.
+- **Performance:** No new request or client processing.
+- **Maintainability:** Existing summary and queue filter contracts remain unchanged.
+- **Security:** The reviewer ID remains visible once in the authenticated top bar; no authentication behaviour changes.
+- **Affected files:** `frontend/app/command-centre/dashboard.tsx`, `frontend/app/investigation-queue/shell.tsx`, `frontend/app/globals.css`, `frontend/e2e/investigation-queue.spec.ts`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+
 ## 2026-09-14: Calibrate near-duplicate text similarity without activating fraud scores
 
 - **Problem:** The user wants comparison beyond exact strings and a rating. SHA-256 is provenance, not a duplicate feature. The supplied exports lack confirmed fraud labels, asset IDs, coordinates and quantities needed for a defensible fraud probability.

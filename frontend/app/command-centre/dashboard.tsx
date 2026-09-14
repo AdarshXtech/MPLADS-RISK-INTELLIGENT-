@@ -146,7 +146,26 @@ function SourceRows({ sources }: { sources: SourceReport[] }) {
   );
 }
 
-function Dashboard({ data, summary, view }: { data: DataOverview; summary: InvestigationSummary | null; view: "command-centre" | "data-quality" }) {
+function WorkloadPanel({ summary }: { summary: InvestigationSummary }) {
+  return <section className="panel workload-panel" aria-labelledby="workload-title">
+    <div className="panel-header">
+      <div>
+        <h2 className="panel-title" id="workload-title">Investigation workload</h2>
+        <p className="panel-description">Current state of the latest reviewable detector run. Counts are not findings of duplication or misuse.</p>
+      </div>
+      <Link className="row-action" href="/investigation-queue?status=NEW">Review pending candidates</Link>
+    </div>
+    <section className="metrics workload-metrics" aria-label="Investigation review status">
+      <Metric label="Pending review" value={summary.new} note="No review event recorded" />
+      <Metric label="Candidate groups" value={summary.total_candidates} note="Require verification" />
+      <Metric label="Under review" value={summary.under_review} note="Review has started" />
+      <Metric label="Verification requested" value={summary.verification_requested} note="Awaiting or checking evidence" />
+      <Metric label="Closed" value={summary.resolved + summary.dismissed} note={`${integer.format(summary.resolved)} resolved, ${integer.format(summary.dismissed)} dismissed`} />
+    </section>
+  </section>;
+}
+
+function Dashboard({ data }: { data: DataOverview }) {
   if (data.sources.length === 0) {
     return (
       <section className="empty-panel" id="data-quality" aria-labelledby="empty-title">
@@ -158,25 +177,8 @@ function Dashboard({ data, summary, view }: { data: DataOverview; summary: Inves
 
   return (
     <>
-      {view === "command-centre" && summary && <section className="panel workload-panel" aria-labelledby="workload-title">
-        <div className="panel-header">
-          <div>
-            <h2 className="panel-title" id="workload-title">Investigation workload</h2>
-            <p className="panel-description">Current state of the latest reviewable detector run. Counts are not findings of duplication or misuse.</p>
-          </div>
-          <Link className="row-action" href="/investigation-queue">Open Investigation Queue</Link>
-        </div>
-        <section className="metrics workload-metrics" aria-label="Investigation review status">
-          <Metric label="Candidate groups" value={summary.total_candidates} note="Require verification" />
-          <Metric label="Not reviewed" value={summary.new} note="No review event recorded" />
-          <Metric label="Under review" value={summary.under_review} note="Review has started" />
-          <Metric label="Verification requested" value={summary.verification_requested} note="Awaiting or checking evidence" />
-          <Metric label="Closed" value={summary.resolved + summary.dismissed} note={`${integer.format(summary.resolved)} resolved, ${integer.format(summary.dismissed)} dismissed`} />
-        </section>
-      </section>}
-
       <section className="metrics" aria-label="Ingestion summary">
-        <Metric label="Retained records" value={data.retained_records} note="Across all staged sources" />
+        <Metric label="Retained records" value={data.retained_records} note={data.source_batches === 1 ? "Across the staged source report" : "Across all staged source reports"} />
         <Metric label="Detail records" value={data.detail_records} note="Available for validated analysis" />
         <Metric label="Needs data review" value={data.records_with_validation_issues} note="Not risk flags" />
         <Metric label="Summary records" value={data.summary_records} note="Retained separately" />
@@ -284,6 +286,7 @@ export async function ReviewerDashboard({ view }: { view: "command-centre" | "da
               </div>
               <p className="view-label">Source-backed evidence view</p>
             </div>
+            {result.status === "ready" && view === "command-centre" && result.summary && <WorkloadPanel summary={result.summary} />}
             <section className="scope-strip" aria-label="Operational scope and analysis status">
               <div><span>Data scope</span><strong>Supplied MPLADS exports</strong></div>
               <div><span>Report coverage</span><strong>Unverified</strong></div>
@@ -304,7 +307,7 @@ export async function ReviewerDashboard({ view }: { view: "command-centre" | "da
                 <Link className="retry-link" href={`/${view}?retry=1`}>Retry connection</Link>
               </section>
             ) : (
-              <Dashboard data={result.data} summary={result.summary} view={view} />
+              <Dashboard data={result.data} />
             )}
           </main>
     </QueueShell>
