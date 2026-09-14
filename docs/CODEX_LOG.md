@@ -1,5 +1,15 @@
 # Codex log
 
+## 2026-09-14: Exploratory near-duplicate comparison
+
+- **Task:** Compare sanctioned works beyond exact description matching while avoiding an unsupported fraud probability.
+- **Files created:** `backend/src/backend/near_duplicate.py`, `backend/tests/test_near_duplicate.py`.
+- **Files modified:** `docs/detection-rules.md`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+- **Decision:** Keep the current reviewable detector unchanged. Use a read-only deterministic description similarity score, with exact administrative/date/amount blocking and numeric/phase mismatch exclusions. SHA-256 remains provenance only. No trained classifier or fraud rating is claimed.
+- **Tests and calibration:** Four synthetic near-duplicate tests passed; Ruff lint and format checks passed; the non-database backend suite passed 43 tests with 13 database-dependent skips. The official 16,000-row sanctioned-work calibration returned 4,881 initial pairs and 2,824 after numeric/phase exclusions. A full test run with the configured database connection reported failures and stalled, so it was interrupted; database integration is not verified in this session.
+- **Known limitations:** The 2,824 pairs are unvalidated text-similarity candidates, not official findings. No model accuracy or false-positive rate can be measured without reviewed labels. No new detector results were staged or shown on the site.
+- **Manual review:** Sample and label candidate pairs, especially repetitive templates, before setting a review threshold or enabling the model. No database, deployment or Git push was performed.
+
 ## 2026-09-13: Separate Data Quality navigation from Command Centre
 
 - **Task:** Fix the Data Quality sidebar link opening Command Centre instead of a distinct page.

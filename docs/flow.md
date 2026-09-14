@@ -1,5 +1,7 @@
 # Application execution flow
 
+The optional `backend.near_duplicate` CLI reads the unchanged sanctioned-work CSV with `ingest.inspect_csv`, groups different Work IDs by exact administrative/date/amount context, and computes description similarity for non-identical descriptions. It prints a bounded calibration report without writing PostgreSQL or modifying `backend.detectors.detect()`. The website, latest reviewable run and 174 existing groups are unchanged. Fraud probability remains unavailable.
+
 Data Quality navigation now opens the authenticated `/data-quality` route, rather than a fragment on Command Centre. `frontend/app/command-centre/dashboard.tsx` renders the shared source-data view for both routes. Data Quality requests `GET /data-overview` only; Command Centre also requests the protected investigation summary. The Data Quality route has its own title, loading, empty and service-error states, with a retry link back to the same route. The 2026-09-10 fragment flow below is historical and superseded.
 
 The 2026-09-13 presentation pass changes no request or persistence path. Existing Command Centre totals now carry an explicit report-row, not unique-project, explanation with the actual source-batch count. Existing evidence and provenance summaries use plain text separators. CSS preserves word-level wrapping for prose, breaks only long identifiers as needed, and aligns the source panel to its content height.

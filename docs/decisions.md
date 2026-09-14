@@ -1,5 +1,18 @@
 # Technical decisions
 
+## 2026-09-14: Calibrate near-duplicate text similarity without activating fraud scores
+
+- **Problem:** The user wants comparison beyond exact strings and a rating. SHA-256 is provenance, not a duplicate feature. The supplied exports lack confirmed fraud labels, asset IDs, coordinates and quantities needed for a defensible fraud probability.
+- **Decision:** Add a read-only, untrained near-duplicate comparison over sanctioned works. Require exact administrative/date/amount context, compare non-identical descriptions with a 90% `SequenceMatcher` threshold, and exclude numeric or explicit phase mismatches. Report only description similarity, not fraud likelihood. Do not stage results or change the reviewable detector run until candidates are validated.
+- **Alternatives considered:** Train a classifier on fabricated labels, expose a weighted fraud score, or enable all fuzzy pairs immediately. These would imply unsupported accuracy or overload reviewers. A new embedding service is unnecessary for the current data.
+- **Selected approach and reason:** Python standard library plus the existing validated CSV parser provides deterministic, explainable, repeatable calibration without a new dependency.
+- **Library selection and reason:** No new library. `difflib.SequenceMatcher` is in Python 3.12 standard library.
+- **Trade-offs:** Conservative exact blocking can miss true duplicates with changed amounts/dates/agencies. Text similarity can still rank legitimate template works highly; the remaining 2,824 pairs require review.
+- **Performance impact:** Local calibration scans the 16,000-row export and compares pairs only within exact-context blocks; the measured run took about 27 seconds after phase and number checks. No runtime or database cost is added to the website.
+- **Maintainability impact:** Standalone module and synthetic tests; no changes to immutable detector results or queue APIs.
+- **Security impact:** Read-only local source access. The CLI prints bounded top-pair evidence, no credentials and no database data.
+- **Affected files:** `backend/src/backend/near_duplicate.py`, `backend/tests/test_near_duplicate.py`, detection documentation, flow record and session log.
+
 ## 2026-09-13: Give Data Quality its own route
 
 - **Problem:** The sidebar labelled Data Quality as a destination, but its link opened Command Centre at a fragment. Users reasonably expected a distinct Data Quality page.
