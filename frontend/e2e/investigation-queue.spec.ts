@@ -59,8 +59,12 @@ test("reviewer can filter, paginate, inspect evidence and save an action", async
   await expect(page.getByText("1 sources", { exact: true })).toHaveCount(0);
   await expect(page.locator("main .workload-panel, main .scope-strip").first()).toHaveClass(/workload-panel/);
   await expect(page.locator(".workload-panel").getByText("25", { exact: true }).first()).toBeVisible();
-  await expect(page.locator(".provenance").first()).toHaveCSS("font-size", "12.8px");
-  await expect(page.locator(".review-list p").first()).toHaveCSS("font-size", "12.8px");
+  expect(
+    await page.locator(".provenance").first().evaluate((element) => Number.parseFloat(window.getComputedStyle(element).fontSize)),
+  ).toBeCloseTo(12.8, 1);
+  expect(
+    await page.locator(".review-list p").first().evaluate((element) => Number.parseFloat(window.getComputedStyle(element).fontSize)),
+  ).toBeCloseTo(12.8, 1);
   await page.getByRole("link", { name: "Review pending candidates" }).click();
   await expect(page.getByRole("heading", { name: "Investigation Queue" })).toBeVisible();
   await expect(page.getByLabel("Review status")).toHaveValue("NEW");

@@ -1,5 +1,13 @@
 # Codex log
 
+## 2026-09-17: Fix cross-browser frontend CI assertion
+
+- **Task:** Diagnose and fix the failed frontend CI run for commit `530e31e`.
+- **Cause:** WebKit serialised the computed `0.8rem` font size with a small floating-point difference, so Playwright's exact string comparison against `12.8px` failed even though the rendered size was correct.
+- **Files modified:** `frontend/e2e/investigation-queue.spec.ts`, `docs/CODEX_LOG.md`.
+- **Fix:** Parse the browser-computed font size as a number and compare it with one decimal digit of tolerance. The UI requirement and CSS remain unchanged.
+- **Evidence:** GitHub Actions run `34828273352` showed Backend success and Frontend failure in the production browser-test step. The same focused patch passed both jobs in run `34879506082` on PR #1. Locally, ESLint passed and the affected production-build browser test passed in Chromium, Firefox and WebKit. `git diff --check` reported no whitespace errors.
+
 ## 2026-09-14: Command Centre review hierarchy and readability
 
 - **Task:** Correct one-source wording, remove the repeated reviewer ID, name the queue action for pending review, enlarge provenance and validation-chart notes, and raise pending work on Command Centre.
