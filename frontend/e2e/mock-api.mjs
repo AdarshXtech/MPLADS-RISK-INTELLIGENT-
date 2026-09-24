@@ -20,6 +20,9 @@ const candidates = Array.from({ length: 25 }, (_, index) => ({
   ida: "Test Agency",
   sanction_date: "2025-01-02",
   sanction_amount: "100",
+  locality_level: "ward_village",
+  location_statuses: [index % 2 ? "ADMINISTRATIVE_ONLY" : "VERIFIED_COORDINATES"],
+  distance_metres: index % 2 ? null : 312.4,
   last_reviewed_at: null,
 }));
 
@@ -81,9 +84,12 @@ createServer(async (request, response) => {
     const query = (url.searchParams.get("query") ?? "").toLowerCase();
     const state = url.searchParams.get("state") ?? "";
     const requestedStatus = url.searchParams.get("status") ?? "";
+    const locality = url.searchParams.get("locality") ?? "";
+    const locationStatus = url.searchParams.get("location_status") ?? "";
     const filtered = candidates.map((item) => ({ ...item, status: statuses.get(item.result_id) ?? "NEW", last_reviewed_at: histories.get(item.result_id)?.[0]?.created_at ?? null })).filter((item) =>
       (!query || JSON.stringify(item).toLowerCase().includes(query)) &&
-      (!state || item.state === state) && (!requestedStatus || item.status === requestedStatus));
+      (!state || item.state === state) && (!requestedStatus || item.status === requestedStatus) &&
+      (!locality || item.locality_level === locality) && (!locationStatus || item.location_statuses.includes(locationStatus)));
     const sort = url.searchParams.get("sort") ?? "group_smallest";
     filtered.sort((left, right) => sort === "group_largest"
       ? right.group_size - left.group_size || left.result_id.localeCompare(right.result_id)
@@ -96,7 +102,7 @@ createServer(async (request, response) => {
       response.writeHead(200, { "Content-Type": "text/csv" });
       return response.end("\uFEFFresult_id,state,status\r\n" + filtered.map((item) => `${item.result_id},${item.state},${item.status}\r\n`).join(""));
     }
-    return send(response, 200, { items: filtered.slice((page - 1) * 20, page * 20), page, page_size: 20, total: filtered.length, states: ["Test State One", "Test State Two"] });
+    return send(response, 200, { items: filtered.slice((page - 1) * 20, page * 20), page, page_size: 20, total: filtered.length, states: ["Test State One", "Test State Two"], localities: ["ward_village"], location_statuses: ["ADMINISTRATIVE_ONLY", "VERIFIED_COORDINATES"] });
   }
   if (request.method === "GET" && match) {
     const candidate = candidates.find((item) => item.result_id === match[1]);
@@ -130,7 +136,7 @@ function detail(candidate) {
     evidence: { matched_values: { "Work description": candidate.work_description, State: candidate.state, Constituency: candidate.constituency, IDA: candidate.ida, "Sanction Date": candidate.sanction_date, "Sanction Amount": candidate.sanction_amount } },
     verification_step: "Verify the underlying synthetic records before deciding.",
     limitations: ["Synthetic browser-test fixture only.", "This is not proof of duplication or misuse."],
-    source_records: workIds.map((work_id, index) => ({ source_sha256: "synthetic-source-sha256", parser_version: "test", record_number: index + 1, work_id, cleaned_values: { "Work description": candidate.work_description }, derived_values: { work_id }, validation_issues: [] })),
+    source_records: workIds.map((work_id, index) => ({ source_sha256: "synthetic-source-sha256", parser_version: "test", record_number: index + 1, work_id, cleaned_values: { "Work description": candidate.work_description }, derived_values: { work_id }, validation_issues: [], location: { status: candidate.location_statuses[index % candidate.location_statuses.length], state: candidate.state, district: "Synthetic district", constituency: candidate.constituency, block_tehsil: "Synthetic block", ward_village: "Synthetic ward", verified_address_text: null, latitude: candidate.distance_metres === null ? null : 20.1, longitude: candidate.distance_metres === null ? null : 78.1, location_source: "Synthetic browser fixture", last_verified_at: null } })),
     history,
   };
 }

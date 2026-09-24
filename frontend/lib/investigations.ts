@@ -2,6 +2,7 @@ import "server-only";
 
 export type Status = "NEW" | "UNDER_REVIEW" | "VERIFICATION_REQUESTED" | "RESOLVED" | "DISMISSED";
 export type Sort = "group_smallest" | "group_largest" | "state" | "recently_reviewed";
+export type LocationStatus = "VERIFIED_COORDINATES" | "ADMINISTRATIVE_ONLY" | "ADDRESS_UNVERIFIED" | "LOCATION_UNAVAILABLE";
 
 export type Candidate = {
   result_id: string;
@@ -18,6 +19,9 @@ export type Candidate = {
   ida: string;
   sanction_date: string;
   sanction_amount: string;
+  locality_level: string;
+  location_statuses: LocationStatus[];
+  distance_metres: number | null;
   last_reviewed_at: string | null;
 };
 
@@ -27,6 +31,8 @@ export type CandidatePage = {
   page_size: number;
   total: number;
   states: string[];
+  localities: string[];
+  location_statuses: LocationStatus[];
 };
 
 export type InvestigationSummary = {
@@ -52,6 +58,19 @@ export type CandidateDetail = Candidate & {
     cleaned_values: Record<string, unknown>;
     derived_values: Record<string, unknown>;
     validation_issues: unknown[];
+    location: {
+      status: LocationStatus;
+      state: string | null;
+      district: string | null;
+      constituency: string | null;
+      block_tehsil: string | null;
+      ward_village: string | null;
+      verified_address_text: string | null;
+      latitude: number | null;
+      longitude: number | null;
+      location_source: string | null;
+      last_verified_at: string | null;
+    };
   }>;
   history: Array<{
     from_status: Status;
@@ -65,6 +84,8 @@ export type CandidateDetail = Candidate & {
     created_at: string;
   }>;
 };
+
+export type SourceRecord = CandidateDetail["source_records"][number];
 
 function configuration() {
   const key = process.env.MPLADS_REVIEW_API_KEY;

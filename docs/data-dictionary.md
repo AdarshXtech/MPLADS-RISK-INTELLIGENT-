@@ -203,6 +203,27 @@ Same field meanings/types/cautions as above; measurements below apply independen
 | Completion Date | 0.0 (0) | 450 | 05-Sep-2024; 07-Apr-2025 | 0 |
 | Amount Disbursed ( ₹ ) | 0.1 (4) | 1549 | 448127; 300000 | 0 |
 
+## Reviewed location import contract
+
+This application-managed schema is not measured source data. It is initially empty until a reviewed import is supplied. The system does not geocode addresses or infer coordinates.
+
+| Field | Type | Status and provenance rule |
+| --- | --- | --- |
+| state | text | Optional reviewed administrative value; source State remains unchanged |
+| district | text | Optional reviewed administrative value |
+| constituency | text | Optional reviewed administrative value; source Constituency remains unchanged |
+| block_tehsil | text | Optional reviewed administrative value |
+| ward_village | text | Optional reviewed administrative value |
+| verified_address_text | text | Optional supplied address; ADDRESS_UNVERIFIED requires it |
+| latitude / longitude | decimal degrees | Both required only for VERIFIED_COORDINATES; never auto-geocoded |
+| location_source | text | Required reviewed source or verification origin |
+| location_status | enum | VERIFIED_COORDINATES, ADMINISTRATIVE_ONLY, ADDRESS_UNVERIFIED or LOCATION_UNAVAILABLE |
+| last_verified_at | ISO 8601 timestamp with timezone | Required for VERIFIED_COORDINATES |
+
+Every location snapshot retains its source SHA-256, parser version and record number, plus separate original, cleaned and derived values. New corrections append a snapshot; existing values are not overwritten.
+
+The 2026-09-25 frontend map reads this contract without adding fields: only `VERIFIED_COORDINATES` and finite valid latitude/longitude render an exact point. A/B are temporary comparison labels, not source identifiers. The map's straight-line separation is a display-only calculation for the selected pair, not a persisted detector output. All source detail values remain linked by the source SHA-256, parser version and record number. Missing coordinates are not inferred from constituency or district names.
+
 ## Cross-report linkage coverage
 
 Counts use parsed, whitespace-normalised Work IDs only. No rows are merged, no names are fuzzy-matched, and missing matches do not imply wrongdoing.

@@ -28,6 +28,12 @@ ReasonCode = Literal[
     "OTHER",
 ]
 Sort = Literal["group_smallest", "group_largest", "state", "recently_reviewed"]
+LocationStatus = Literal[
+    "VERIFIED_COORDINATES",
+    "ADMINISTRATIVE_ONLY",
+    "ADDRESS_UNVERIFIED",
+    "LOCATION_UNAVAILABLE",
+]
 
 SORT_SQL = {
     "group_smallest": "jsonb_array_length(r.source_records), r.result_id",
@@ -84,6 +90,9 @@ class InvestigationCandidate(BaseModel):
     ida: str
     sanction_date: str
     sanction_amount: str
+    locality_level: str
+    location_statuses: list[LocationStatus]
+    distance_metres: float | None = None
     last_reviewed_at: datetime | None = None
 
 
@@ -93,6 +102,8 @@ class CandidatePage(BaseModel):
     page_size: int
     total: int
     states: list[str]
+    localities: list[str]
+    location_statuses: list[LocationStatus]
 
 
 class InvestigationSummary(BaseModel):
@@ -112,6 +123,7 @@ class SourceEvidence(BaseModel):
     cleaned_values: dict
     derived_values: dict
     validation_issues: list
+    location: dict
 
 
 class ReviewEvent(BaseModel):
@@ -158,6 +170,19 @@ def _amount(evidence: dict) -> str:
     return ""
 
 
+def _location_statuses(evidence: dict) -> list[LocationStatus]:
+    statuses = evidence.get("location_summary", {}).get("statuses")
+    if statuses:
+        return statuses
+    if _matched_value(evidence, "State"):
+        return ["ADMINISTRATIVE_ONLY"]
+    return ["LOCATION_UNAVAILABLE"]
+
+
+def _locality_level(evidence: dict) -> str:
+    return evidence.get("locality_evidence", {}).get("level", "EXACT_CONTEXT")
+
+
 def _candidate(row) -> InvestigationCandidate:
     evidence = row[5]
     return InvestigationCandidate(
@@ -175,6 +200,13 @@ def _candidate(row) -> InvestigationCandidate:
         ida=_matched_value(evidence, "IDA"),
         sanction_date=_matched_value(evidence, "Sanction Date"),
         sanction_amount=_amount(evidence),
+        locality_level=_locality_level(evidence),
+        location_statuses=_location_statuses(evidence),
+        distance_metres=(
+            float(evidence["spatial_evidence"]["distance_metres"])
+            if evidence.get("spatial_evidence", {}).get("distance_metres") is not None
+            else None
+        ),
         last_reviewed_at=row[7],
     )
 
@@ -225,7 +257,7 @@ def investigation_summary(connection) -> InvestigationSummary:
     )
 
 
-def candidate_filter(query: str, state: str, status: str):
+def candidate_filter(query: str, state: str, status: str, locality: str, location_status: str):
     clauses = ["1=1"]
     parameters: list[object] = []
     if query:
@@ -237,6 +269,16 @@ def candidate_filter(query: str, state: str, status: str):
     if status:
         clauses.append("COALESCE(last_event.to_status, 'NEW') = %s")
         parameters.append(status)
+    if locality:
+        clauses.append("COALESCE(r.evidence->'locality_evidence'->>'level', 'EXACT_CONTEXT') = %s")
+        parameters.append(locality)
+    if location_status:
+        clauses.append(
+            "COALESCE(r.evidence->'location_summary'->'statuses', "
+            "CASE WHEN r.evidence->'matched_values'->>'State' IS NULL "
+            "THEN '[\"LOCATION_UNAVAILABLE\"]'::jsonb ELSE '[\"ADMINISTRATIVE_ONLY\"]'::jsonb END) @> jsonb_build_array(%s::text)"
+        )
+        parameters.append(location_status)
     return " WHERE " + " AND ".join(clauses), parameters
 
 
@@ -248,8 +290,10 @@ def list_candidates(
     state: str,
     status: str,
     sort: Sort = "group_smallest",
+    locality: str = "",
+    location_status: str = "",
 ):
-    where, parameters = candidate_filter(query, state, status)
+    where, parameters = candidate_filter(query, state, status, locality, location_status)
     total = connection.execute(
         "SELECT count(*) FROM (" + BASE_QUERY + where + ") candidates",
         parameters,
@@ -268,12 +312,34 @@ def list_candidates(
         ).fetchall()
         if row[0]
     ]
+    localities = [
+        row[0]
+        for row in connection.execute(
+            "SELECT DISTINCT COALESCE(evidence->'locality_evidence'->>'level', 'EXACT_CONTEXT') "
+            "FROM mplads_detector_result JOIN (SELECT run_id FROM mplads_detector_run "
+            "WHERE run_status='reviewable' ORDER BY jsonb_array_length(source_batches) DESC, run_id DESC LIMIT 1) selected "
+            "USING (run_id) ORDER BY 1"
+        ).fetchall()
+    ]
+    location_statuses = [
+        row[0]
+        for row in connection.execute(
+            "SELECT DISTINCT status FROM mplads_detector_result result JOIN "
+            "(SELECT run_id FROM mplads_detector_run WHERE run_status='reviewable' "
+            "ORDER BY jsonb_array_length(source_batches) DESC, run_id DESC LIMIT 1) selected USING (run_id) "
+            "CROSS JOIN LATERAL jsonb_array_elements_text(COALESCE(result.evidence->'location_summary'->'statuses', "
+            "CASE WHEN result.evidence->'matched_values'->>'State' IS NULL THEN '[\"LOCATION_UNAVAILABLE\"]'::jsonb "
+            "ELSE '[\"ADMINISTRATIVE_ONLY\"]'::jsonb END)) AS status ORDER BY 1"
+        ).fetchall()
+    ]
     return CandidatePage(
         items=[_candidate(row) for row in rows],
         page=page,
         page_size=page_size,
         total=total,
         states=states,
+        localities=localities,
+        location_statuses=location_statuses,
     )
 
 
@@ -302,9 +368,11 @@ def export_candidates(
     state: str,
     status: str,
     sort: Sort = "group_smallest",
+    locality: str = "",
+    location_status: str = "",
 ) -> bytes:
     """One statement gives the export a consistent PostgreSQL snapshot."""
-    where, parameters = candidate_filter(query, state, status)
+    where, parameters = candidate_filter(query, state, status, locality, location_status)
     # ponytail: bounded in-memory CSV; use a background export if 10,000 groups are exceeded.
     rows = connection.execute(
         BASE_QUERY + where + " ORDER BY " + SORT_SQL[sort] + " LIMIT %s",
@@ -360,11 +428,19 @@ def candidate_detail(connection, result_id: str) -> CandidateDetail:
     ).fetchone()
     sources = connection.execute(
         "SELECT ref.source_sha256, ref.parser_version, ref.record_number, ref.work_id, "
-        "source.cleaned_values, source.derived_values, source.validation_issues "
+        "source.cleaned_values, source.derived_values, source.validation_issues, "
+        "location.state, location.district, location.constituency, location.block_tehsil, "
+        "location.ward_village, location.verified_address_text, location.latitude, location.longitude, "
+        "location.location_source, location.location_status, location.last_verified_at "
         "FROM mplads_detector_result result "
         "CROSS JOIN LATERAL jsonb_to_recordset(result.source_records) AS "
         "ref(source_sha256 text, parser_version text, record_number integer, work_id text) "
         "JOIN mplads_source_record source USING (source_sha256, parser_version, record_number) "
+        "LEFT JOIN LATERAL (SELECT state,district,constituency,block_tehsil,ward_village,"
+        "verified_address_text,latitude,longitude,location_source,location_status,last_verified_at "
+        "FROM mplads_work_location WHERE source_sha256=ref.source_sha256 "
+        "AND parser_version=ref.parser_version AND record_number=ref.record_number "
+        "ORDER BY last_verified_at DESC NULLS LAST, location_id DESC LIMIT 1) location ON true "
         "WHERE result.run_id=%s AND result.result_id=%s ORDER BY ref.record_number",
         (detector[0], result_id),
     ).fetchall()
@@ -390,6 +466,20 @@ def candidate_detail(connection, result_id: str) -> CandidateDetail:
                 cleaned_values=item[4],
                 derived_values=item[5],
                 validation_issues=item[6],
+                location={
+                    "status": item[16]
+                    or ("ADMINISTRATIVE_ONLY" if item[4].get("State") or item[4].get("Constituency") else "LOCATION_UNAVAILABLE"),
+                    "state": item[7] or item[4].get("State"),
+                    "district": item[8],
+                    "constituency": item[9] or item[4].get("Constituency"),
+                    "block_tehsil": item[10],
+                    "ward_village": item[11],
+                    "verified_address_text": item[12],
+                    "latitude": float(item[13]) if item[13] is not None else None,
+                    "longitude": float(item[14]) if item[14] is not None else None,
+                    "location_source": item[15],
+                    "last_verified_at": item[17].isoformat() if item[17] else None,
+                },
             )
             for item in sources
         ],

@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     }
     const supplied = new URL(request.url).searchParams;
     const filters = new URLSearchParams();
-    for (const key of ["query", "state", "status", "sort"]) {
+    for (const key of ["query", "state", "status", "sort", "locality", "location_status"]) {
       const value = supplied.get(key);
       if (value) filters.set(key, value);
     }

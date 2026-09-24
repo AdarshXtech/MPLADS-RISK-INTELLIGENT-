@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { sessionUsername } from "@/lib/auth";
 import { login } from "./actions";
+import { Info, ShieldCheck, UserRound } from "lucide-react";
+import { PasswordField } from "./password-field";
+import { SubmitButton } from "../submit-button";
+import { Brand } from "../brand";
 
 export const metadata: Metadata = { title: "Reviewer sign in" };
 
@@ -9,9 +13,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   if (await sessionUsername()) redirect("/investigation-queue");
   const { error } = await searchParams;
   return (
+    <div className="auth-shell">
+    <header className="auth-header"><span>Suchak AI</span><span><ShieldCheck size={15} aria-hidden="true" /> Authorised reviewer access</span></header>
     <main className="login-page" id="main-content">
       <section className="login-card" aria-labelledby="login-title">
-        <div className="brand login-brand"><span className="brand-mark" aria-hidden="true">M</span><div><p className="brand-name">MPLADS RISK</p><p className="brand-context">Administrative review</p></div></div>
+        <Brand className="login-brand" />
         <p className="eyebrow">Restricted access</p>
         <h1 id="login-title">Reviewer sign in</h1>
         <p className="page-intro">Sign in to inspect potential duplicate candidates and record verification decisions.</p>
@@ -19,13 +25,15 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         {error === "configuration" && <p className="form-error" role="alert">Reviewer access is not configured. Contact the project administrator.</p>}
         <form className="stack-form" action={login}>
           <label htmlFor="username">Username</label>
-          <input id="username" name="username" autoComplete="username" required />
+          <div className="input-with-icon"><UserRound size={17} aria-hidden="true" /><input id="username" name="username" autoComplete="username" required /></div>
           <label htmlFor="password">Password</label>
-          <input id="password" name="password" type="password" autoComplete="current-password" required />
-          <button type="submit">Sign in</button>
+          <PasswordField />
+          <SubmitButton pendingLabel="Signing in..." variant="login">Sign in</SubmitButton>
         </form>
-        <p className="boundary-copy">Access is limited to authorised reviewers. A risk candidate is not proof of duplication, misuse or fraud.</p>
+        <p className="boundary-copy"><Info size={17} aria-hidden="true" /><span>Access is limited to authorised reviewers. A risk candidate is not proof of duplication, misuse or fraud.</span></p>
       </section>
     </main>
+    <footer className="auth-footer"><span>Suchak AI</span><span>MPLADS Risk Intelligence and Early Warning System</span></footer>
+    </div>
   );
 }

@@ -168,9 +168,14 @@ def investigation_candidates(
         ),
     ] = "",
     sort: Sort = "group_smallest",
+    locality: Annotated[str, Query(max_length=40)] = "",
+    location_status: Annotated[
+        str,
+        Query(pattern="^(VERIFIED_COORDINATES|ADMINISTRATIVE_ONLY|ADDRESS_UNVERIFIED|LOCATION_UNAVAILABLE)?$"),
+    ] = "",
 ):
     return list_candidates(
-        connection, page, page_size, query.strip(), state, status, sort
+        connection, page, page_size, query.strip(), state, status, sort, locality, location_status
     )
 
 
@@ -189,9 +194,14 @@ def investigation_export(
         ),
     ] = "",
     sort: Sort = "group_smallest",
+    locality: Annotated[str, Query(max_length=40)] = "",
+    location_status: Annotated[
+        str,
+        Query(pattern="^(VERIFIED_COORDINATES|ADMINISTRATIVE_ONLY|ADDRESS_UNVERIFIED|LOCATION_UNAVAILABLE)?$"),
+    ] = "",
 ):
     return Response(
-        export_candidates(connection, query.strip(), state, status, sort),
+        export_candidates(connection, query.strip(), state, status, sort, locality, location_status),
         media_type="text/csv",
         headers={
             "Content-Disposition": 'attachment; filename="investigation-queue.csv"',

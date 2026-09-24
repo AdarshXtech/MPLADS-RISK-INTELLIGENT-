@@ -1,6 +1,6 @@
 # Application execution flow
 
-This document describes the implementation that exists in the repository on 2026-09-08. It does not describe planned behaviour as if it were implemented.
+This document describes the implementation that exists in the repository on 2026-09-25. It does not describe planned behaviour as if it were implemented.
 
 ## Current implementation status
 
@@ -19,7 +19,25 @@ push or pull request to master, or manual run
 
 The two jobs run independently with `contents: read`. They consume no official source files and perform no deployment. Browser tests use the existing clearly synthetic mock API and runtime-generated test credentials.
 
+## 2026-09-25 frontend presentation update
+
+The shared `QueueShell` now renders product identity, actual reviewer identity, service state and sign-out in the header, with a light navigation sidebar. The queue and candidate error paths pass `connected=false`. Candidate data supplies a screening summary and source comparison; the review form and history sit in a right rail on desktop and below evidence on smaller screens.
+
+`login/page.tsx` -> `PasswordField` toggles only the input visibility in the browser. Login and candidate forms -> `SubmitButton` -> `useFormStatus` show pending state and disable repeated clicks -> existing Server Action -> existing signed-session or FastAPI review flow. Password visibility does not submit the form. Export retains its authenticated fetch/download/error path and adds a download/pending icon.
+
+Files changed for this UI session: `frontend/app/globals.css`, `frontend/app/investigation-queue/shell.tsx`, `frontend/app/login/page.tsx`, new `frontend/app/login/password-field.tsx`, new `frontend/app/submit-button.tsx`, queue page, export button, candidate evidence page, frontend manifest/lock, existing browser tests, new `frontend/e2e/stitch-ui.spec.ts` and frontend design/supporting documentation. Existing uncommitted backend/locality changes remain separate from this presentation task.
+
 ## Frontend entry point
+
+### Suchak AI comparison and identity flow
+
+`Brand` reads the unchanged local user logo -> login and shared authenticated header. Root layout sets Suchak AI page titles and icon metadata. Command Centre -> existing investigation summary -> `ReviewOverview` renders actual status distribution and links to the existing filtered queue. No added analytics request or fabricated trend.
+
+Candidate detail -> existing source records -> `LocationComparison` receives minimal source identity/location fields -> server-rendered `LocationMapCanvas` shell -> browser effect dynamically imports Leaflet -> local `/maps/india.geojson` -> India reference outline. The loading overlay does not change the shell height. `coordinates()` accepts only finite, valid verified coordinates. Two selected records become A/B markers without location substitution; larger groups offer pair selection. Optional Street map adds browser-to-OSM tile requests; failures retain local outline and pins. Display-only pair separation is independent of detector evidence.
+
+Marker click, Enter/Space or View source button -> abort preceding request -> authenticated `GET /investigation-queue/[id]/source?sha=...&parser=...&record=...` -> signed-session validation -> bounded identity validation -> existing server-only `getCandidate()` -> protected FastAPI candidate endpoint -> exact source-membership lookup -> private/no-store JSON record -> provenance/location/cleaned/derived/validation detail panel. API credentials are never sent to the browser. Error retry and session-expired sign-in recovery are implemented; selection changes abort in-flight detail requests. This is read-only and does not persist or alter evidence.
+
+Files changed for this continuation: new Brand, ReviewOverview, LocationComparison, LocationMapCanvas, location types, source route, map/brand assets and location E2E suite; layout, shell, login, Command Centre, candidate detail, global styles, investigations types and frontend manifest/lock; design, architecture, PRD, source register, technology, feature connections, decisions, flow and session log. Existing backend/locality work remains unchanged by this continuation.
 
 ### Responsive presentation and screenshot flow
 

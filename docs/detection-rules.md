@@ -87,3 +87,16 @@ See [data-dictionary.md](data-dictionary.md) for every field and [ingestion.md](
 Implemented results expose ID/name, severity, confidence, source-file hash and record-number evidence, fields used, explanation, verification step, limitations and rule version. The deterministic run identity is derived from engine version, configuration and source batches. Results have their own content hash and immutable database identity. Unavailable detectors retain missing-input reasons, not zero or Low scores.
 
 Composite weights, risk thresholds and probability calibration remain undecided and unimplemented. Data-quality issues stay separate from detector results. Generative AI does not participate in detection. An anomaly does not prove fraud.
+
+## Locality-first potential-duplicate screening
+
+- **Detector ID/version:** `locality_duplicate_candidate` version 1, introduced in engine version 3. `duplicate_work_candidate` version 1 remains unchanged and historical results are retained.
+- **Input:** sanctioned-work records plus optional, reviewed location snapshots linked by immutable source SHA-256, parser version and record number.
+- **Comparison order:** ward/village, block/tehsil, district, State, then verified-coordinate radius. The detector does not conduct a separate nationwide text-similarity screen. Existing exact-context version 1 screening remains available across the supplied national snapshot.
+- **Condition:** different Work IDs, the same normalised work type, locality evidence, description-token Jaccard similarity of at least 0.60 with at least three shared tokens, and one additional supporting signal. Signals are same authority, same constituency, same sanction date or same sanction amount. Proximity alone never creates a candidate.
+- **Spatial filtering:** the configured 500 metre radius uses deterministic Haversine calculation, not PostGIS. It is a **prototype configuration requiring policy validation**, not an official MPLADS limit. Evidence records the calculated metres and kilometres, whether the pair is inside that radius and the configuration value.
+- **Location statuses:** `VERIFIED_COORDINATES`, `ADMINISTRATIVE_ONLY`, `ADDRESS_UNVERIFIED` and `LOCATION_UNAVAILABLE` are shown separately from severity. Missing location data neither reduces risk nor establishes absence of a potential duplicate.
+- **No-coordinate limitation:** “Location is not sufficiently verified for spatial comparison. This record was compared only using available administrative fields.”
+- **Required verification:** physical duplicate confirmation requires official review of asset identity, exact location, quantities, scope, phases, documents and inspection evidence. A candidate remains a potential duplicate candidate requiring verification.
+
+The reviewed-location table is currently empty for the supplied data. Import must use `python -m backend.locations <reviewed-location.csv>` after authorised schema creation. Automatic address geocoding is deliberately unavailable pending an approved official source, privacy review, rate limits, provenance and error-handling design.

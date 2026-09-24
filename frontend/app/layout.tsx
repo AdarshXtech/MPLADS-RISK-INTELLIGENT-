@@ -14,10 +14,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "MPLADS Risk Intelligence",
-    template: "%s | MPLADS Risk Intelligence",
+    default: "Suchak AI | MPLADS Risk Intelligence",
+    template: "%s | Suchak AI",
   },
-  description: "MPLADS data readiness and risk monitoring support",
+  description: "Suchak AI: MPLADS risk intelligence, source evidence and administrative verification.",
+  icons: { icon: "/brand/suchak-ai.png", apple: "/brand/suchak-ai.png" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

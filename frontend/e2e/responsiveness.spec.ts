@@ -23,7 +23,7 @@ async function scenario(page: Page, paths: Record<string, object> = {}, reset = 
 async function signIn(page: Page) {
   await page.goto("/login");
   await page.getByLabel("Username").fill(process.env.MPLADS_E2E_USERNAME!);
-  await page.getByLabel("Password").fill(process.env.MPLADS_E2E_PASSWORD!);
+  await page.getByLabel("Password", { exact: true }).fill(process.env.MPLADS_E2E_PASSWORD!);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Investigation Queue", exact: true })).toBeVisible();
 }
@@ -79,7 +79,7 @@ for (const size of sizes.filter(({ name }) => ["phone", "tablet", "desktop"].inc
     await page.setViewportSize(size);
     await page.goto("/login");
     await page.getByLabel("Username").fill("incorrect");
-    await page.getByLabel("Password").fill("incorrect");
+    await page.getByLabel("Password", { exact: true }).fill("incorrect");
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await expect(page.locator("main").getByRole("alert")).toContainText("incorrect");
     await capture(page, info, size.name, "06-login-error");

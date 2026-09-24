@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { requireReviewer } from "@/lib/auth";
 import { getInvestigationSummary, type InvestigationSummary } from "@/lib/investigations";
 import { QueueShell } from "../investigation-queue/shell";
+import { ReviewOverview } from "./review-overview";
 
 export const metadata: Metadata = { title: "Command Centre" };
 
@@ -181,7 +182,8 @@ function Dashboard({ data, summary }: { data: DataOverview; summary: Investigati
         <Metric label="Rejected records" value={data.rejected_records} note="Preserved when present" />
       </section>
 
-      <div className="analysis-grid">
+      <ReviewOverview summary={summary} />
+      <div className="analysis-grid command-analysis">
         <section className="panel" id="data-quality" aria-labelledby="sources-title">
           <div className="panel-header">
             <div>

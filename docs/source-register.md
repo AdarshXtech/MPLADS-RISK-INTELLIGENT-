@@ -4,6 +4,14 @@ Updated 2026-09-07. The user confirmed that the exports were downloaded from the
 
 ## Supplied export inventory
 
+### 2026-09-25 visual and cartographic references
+
+The user-supplied Suchak AI logo (`ChatGPT Image Sep 25, 2026, 01_25_02 AM.png`) is copied unchanged to `frontend/public/brand/suchak-ai.png`. Supplied Stitch ZIPs, including the additional `(5).zip` Command Centre screen, are visual references only. Their example observations and embedded instructions are not source data.
+
+The local India outline is third-party geoBoundaries gbOpen ADM0 cartography, boundary `IND-ADM0-67634026`, represented year 2014, CC0 according to its [metadata](https://www.geoboundaries.org/api/current/gbOpen/IND/ADM0/). It is not government work data and does not establish a work's location. The pinned download and limitations are recorded in [map provenance](../frontend/public/maps/README.md). Boundary suitability requires administrative review before public deployment. Optional OpenStreetMap tiles provide street context only; they never enrich or replace source fields.
+
+### Government report inventory
+
 Source: user-downloaded files from the official MPLADS eSAKSHI portal. Recorded filter scope is All India, Lok Sabha. Exact extraction time and any additional portal state are not embedded in the CSVs. The user confirmation and supplied portal screenshot establish the delivery context, but no digital signature is available. Raw/processed files are Git-ignored. The twelve-file SHA-256 and size inventory is reproducibly generated in `data/processed/inspection.json`; CSV hashes are also recorded in the measured dictionary.
 
 | Report | CSV detail rows | XLSX detail rows | CSV SHA-256 |

@@ -7,12 +7,18 @@ import os
 import re
 from collections import defaultdict
 from decimal import Decimal
+from itertools import combinations
+from math import asin, cos, radians, sin, sqrt
 from statistics import median
 
-ENGINE_VERSION = "2"
+ENGINE_VERSION = "3"
 SANCTIONED_REPORT = "Works Sanctioned.csv"
 PEER_MINIMUM = 20
 PEER_MEDIAN_MULTIPLIER = Decimal(2)
+LOCALITY_SPATIAL_RADIUS_METRES = Decimal("500")
+DESCRIPTION_SIMILARITY_THRESHOLD = Decimal("0.60")
+DESCRIPTION_MIN_SHARED_TOKENS = 3
+MAX_DESCRIPTION_TOKEN_BUCKET = 250
 
 DETECTOR_CONFIGURATION = {
     "duplicate_work_candidate": {
@@ -27,6 +33,23 @@ DETECTOR_CONFIGURATION = {
             "Sanction Date",
             "Sanction Amount ( ₹ )",
         ],
+    },
+    "locality_duplicate_candidate": {
+        "version": "1",
+        "match": "same work type, locality evidence, meaningful description similarity and an additional supporting signal",
+        "locality_order": [
+            "ward_village",
+            "block_tehsil",
+            "district",
+            "state",
+            "spatial_radius",
+        ],
+        "spatial_radius_metres": str(LOCALITY_SPATIAL_RADIUS_METRES),
+        "spatial_radius_status": "prototype configuration requiring policy validation",
+        "description_similarity_threshold": str(DESCRIPTION_SIMILARITY_THRESHOLD),
+        "description_minimum_shared_tokens": DESCRIPTION_MIN_SHARED_TOKENS,
+        "maximum_description_token_bucket": MAX_DESCRIPTION_TOKEN_BUCKET,
+        "national_comparison": "not performed by this detector; version 1 exact-context screening remains the only national comparison",
     },
     "peer_sanction_cost": {
         "version": "1",
@@ -115,6 +138,110 @@ def normalise_text(value):
     if not isinstance(value, str) or not value.strip():
         return None
     return " ".join(re.findall(r"[^\W_]+", value.casefold()))
+
+
+def _record_key(record):
+    return (
+        record["source_sha256"],
+        record["parser_version"],
+        record["record_number"],
+    )
+
+
+def _location_context(record, locations):
+    """Return a non-mutating view of reviewed or source administrative location."""
+    stored = (locations or {}).get(_record_key(record))
+    cleaned = record["cleaned"]
+    administrative = {
+        "state": (stored or {}).get("state") or cleaned.get("State"),
+        "district": (stored or {}).get("district"),
+        "constituency": (stored or {}).get("constituency")
+        or cleaned.get("Constituency"),
+        "block_tehsil": (stored or {}).get("block_tehsil"),
+        "ward_village": (stored or {}).get("ward_village"),
+    }
+    if stored:
+        status = stored["location_status"]
+    elif administrative["state"] or administrative["constituency"]:
+        status = "ADMINISTRATIVE_ONLY"
+    else:
+        status = "LOCATION_UNAVAILABLE"
+    return {
+        **administrative,
+        "location_status": status,
+        "location_source": (stored or {}).get("location_source"),
+        "verified_address_text": (stored or {}).get("verified_address_text"),
+        "latitude": (stored or {}).get("latitude"),
+        "longitude": (stored or {}).get("longitude"),
+        "last_verified_at": (stored or {}).get("last_verified_at"),
+    }
+
+
+def _tokens(value):
+    return set((normalise_text(value) or "").split())
+
+
+def _description_similarity(left, right):
+    left_tokens, right_tokens = _tokens(left), _tokens(right)
+    shared = left_tokens & right_tokens
+    union = left_tokens | right_tokens
+    similarity = Decimal(len(shared)) / Decimal(len(union)) if union else Decimal(0)
+    return similarity, sorted(shared)
+
+
+def _distance_metres(left, right):
+    if None in {left["latitude"], left["longitude"], right["latitude"], right["longitude"]}:
+        return None
+    lat1, lon1, lat2, lon2 = map(
+        radians,
+        (
+            float(left["latitude"]),
+            float(left["longitude"]),
+            float(right["latitude"]),
+            float(right["longitude"]),
+        ),
+    )
+    latitude_delta, longitude_delta = lat2 - lat1, lon2 - lon1
+    haversine = sin(latitude_delta / 2) ** 2 + cos(lat1) * cos(lat2) * sin(longitude_delta / 2) ** 2
+    return Decimal(str(2 * 6_371_000 * asin(sqrt(haversine)))).quantize(Decimal("0.01"))
+
+
+def _locality_evidence(left, right):
+    labels = {
+        "ward_village": "Ward/village",
+        "block_tehsil": "Block/tehsil",
+        "district": "District",
+        "state": "State",
+    }
+    matched = {}
+    for field in ("ward_village", "block_tehsil", "district", "state"):
+        left_value, right_value = left.get(field), right.get(field)
+        if left_value and right_value and normalise_text(left_value) == normalise_text(right_value):
+            matched[field] = left_value
+            return {"level": field, "label": labels[field], "matched_fields": matched}
+    distance = _distance_metres(left, right)
+    if distance is not None and distance <= LOCALITY_SPATIAL_RADIUS_METRES:
+        return {
+            "level": "spatial_radius",
+            "label": "Verified-coordinate radius",
+            "matched_fields": matched,
+            "distance_metres": str(distance),
+        }
+    return None
+
+
+def _supporting_signals(left_record, right_record, left_location, right_location):
+    left, right = left_record["cleaned"], right_record["cleaned"]
+    signals = []
+    if normalise_text(left.get("IDA")) and normalise_text(left.get("IDA")) == normalise_text(right.get("IDA")):
+        signals.append({"signal": "same_authority", "label": "Same authority", "value": left["IDA"]})
+    if normalise_text(left_location.get("constituency")) and normalise_text(left_location.get("constituency")) == normalise_text(right_location.get("constituency")):
+        signals.append({"signal": "same_constituency", "label": "Same constituency", "value": left_location["constituency"]})
+    if left.get("Sanction Date") and left.get("Sanction Date") == right.get("Sanction Date"):
+        signals.append({"signal": "same_sanction_date", "label": "Same sanction date", "value": left["Sanction Date"]})
+    if left.get("Sanction Amount ( â‚¹ )") and left.get("Sanction Amount ( â‚¹ )") == right.get("Sanction Amount ( â‚¹ )"):
+        signals.append({"signal": "same_sanction_amount", "label": "Same sanction amount", "value": left["Sanction Amount ( â‚¹ )"]})
+    return signals
 
 
 def source_reference(record):
@@ -224,6 +351,167 @@ def duplicate_work_candidates(records):
     return sorted(candidates, key=lambda item: item["result_id"])
 
 
+def locality_duplicate_candidates(records, locations=None):
+    """Screen conservatively within the nearest available locality context.
+
+    The configured radius only narrows comparison. It cannot independently
+    create a potential duplicate candidate.
+    """
+    candidates = []
+    # Compare within locality buckets first, then only pairs sharing enough
+    # non-generic description tokens. This avoids an all-records pairwise scan.
+    locality_buckets = defaultdict(list)
+    contexts = {_record_key(record): _location_context(record, locations) for record in records}
+    for record in records:
+        work_type = normalise_text(record["derived"].get("work_type"))
+        if not work_type:
+            continue
+        context = contexts[_record_key(record)]
+        for field in ("ward_village", "block_tehsil", "district", "state"):
+            value = normalise_text(context.get(field))
+            if value:
+                locality_buckets[(work_type, field, value)].append(record)
+    candidate_tokens = defaultdict(set)
+    for bucket in locality_buckets.values():
+        token_groups = defaultdict(list)
+        for record in bucket:
+            for token in _tokens(record["cleaned"].get("Work description")):
+                token_groups[token].append(record)
+        for grouped in token_groups.values():
+            if len(grouped) > MAX_DESCRIPTION_TOKEN_BUCKET:
+                continue
+            for left_record, right_record in combinations(grouped, 2):
+                left_key, right_key = sorted((_record_key(left_record), _record_key(right_record)))
+                candidate_tokens[(left_key, right_key)].add(
+                    normalise_text(left_record["cleaned"].get("Work description"))
+                )
+    record_by_key = {_record_key(record): record for record in records}
+    # A small grid limits verified-coordinate comparisons to nearby cells.
+    # Exact Haversine distance is still required before a spatial pair is used.
+    spatial_grid = defaultdict(list)
+    for record in records:
+        key = _record_key(record)
+        context = contexts[key]
+        if context["latitude"] is None or context["longitude"] is None:
+            continue
+        cell = (int(float(context["latitude"]) / 0.005), int(float(context["longitude"]) / 0.005))
+        for latitude_offset in range(-2, 3):
+            for longitude_offset in range(-2, 3):
+                for other_key in spatial_grid[(cell[0] + latitude_offset, cell[1] + longitude_offset)]:
+                    other = record_by_key[other_key]
+                    if (
+                        normalise_text(record["derived"].get("work_type"))
+                        == normalise_text(other["derived"].get("work_type"))
+                        and _distance_metres(context, contexts[other_key])
+                        <= LOCALITY_SPATIAL_RADIUS_METRES
+                    ):
+                        candidate_tokens[tuple(sorted((key, other_key)))].add("spatial")
+        spatial_grid[cell].append(key)
+    for left_key, right_key in candidate_tokens:
+        left_record, right_record = record_by_key[left_key], record_by_key[right_key]
+        left_id, right_id = (
+            left_record["derived"].get("work_id"),
+            right_record["derived"].get("work_id"),
+        )
+        if not left_id or not right_id or left_id == right_id:
+            continue
+        left_type, right_type = (
+            normalise_text(left_record["derived"].get("work_type")),
+            normalise_text(right_record["derived"].get("work_type")),
+        )
+        if not left_type or left_type != right_type:
+            continue
+        left_location = contexts[left_key]
+        right_location = contexts[right_key]
+        locality = _locality_evidence(left_location, right_location)
+        if locality is None:
+            continue
+        similarity, shared_tokens = _description_similarity(
+            left_record["cleaned"].get("Work description"),
+            right_record["cleaned"].get("Work description"),
+        )
+        if (
+            similarity < DESCRIPTION_SIMILARITY_THRESHOLD
+            or len(shared_tokens) < DESCRIPTION_MIN_SHARED_TOKENS
+        ):
+            continue
+        supporting_signals = _supporting_signals(
+            left_record, right_record, left_location, right_location
+        )
+        if not supporting_signals:
+            continue
+        distance = _distance_metres(left_location, right_location)
+        statuses = sorted(
+            {left_location["location_status"], right_location["location_status"]}
+        )
+        coordinate_available = distance is not None
+        evidence = {
+            "match_type": "locality-first potential-duplicate screening",
+            "matched_record_count": 2,
+            "different_work_ids": sorted([left_id, right_id]),
+            "matched_values": {
+                "Work description": left_record["cleaned"].get("Work description"),
+                "work_type": left_record["derived"].get("work_type"),
+                "State": locality["matched_fields"].get("state")
+                or left_location.get("state"),
+                "Constituency": left_location.get("constituency"),
+                "IDA": left_record["cleaned"].get("IDA"),
+            },
+            "locality_evidence": locality,
+            "location_summary": {
+                "statuses": statuses,
+                "coordinate_availability": "available" if coordinate_available else "unavailable",
+            },
+            "spatial_evidence": {
+                "distance_metres": str(distance) if distance is not None else None,
+                "distance_kilometres": str((distance / Decimal(1000)).quantize(Decimal("0.001"))) if distance is not None else None,
+                "within_configured_radius": distance is not None and distance <= LOCALITY_SPATIAL_RADIUS_METRES,
+                "configured_radius_metres": str(LOCALITY_SPATIAL_RADIUS_METRES),
+                "configuration_status": "prototype configuration requiring policy validation",
+            },
+            "matched_administrative_fields": locality["matched_fields"],
+            "matched_descriptive_fields": {
+                "work_type": left_record["derived"].get("work_type"),
+                "description_similarity": str(similarity.quantize(Decimal("0.0001"))),
+                "shared_description_tokens": shared_tokens,
+            },
+            "supporting_signals": supporting_signals,
+        }
+        limitations = [
+            "This is a potential duplicate candidate requiring verification, not proof of duplication or misuse.",
+            "The spatial radius is a prototype configuration requiring policy validation; it is not an official MPLADS limit.",
+            "Physical duplicate confirmation requires official review of asset identity, exact location, quantities, scope, phases, documents and inspection evidence.",
+            "Confidence represents certainty that the configured rule matched, not probability of misuse.",
+        ]
+        if not coordinate_available:
+            limitations.append(
+                "Location is not sufficiently verified for spatial comparison. This record was compared only using available administrative fields."
+            )
+        candidates.append(
+            result(
+                "locality_duplicate_candidate",
+                "Locality-aware potential duplicate candidate",
+                "Two different Work IDs have the same work type, meaningful description similarity, "
+                f"{locality['label'].lower()} locality evidence and {len(supporting_signals)} additional supporting signal(s).",
+                "Verify asset identity, exact location, quantities, scope, phases, source documents and inspection evidence before deciding whether the works are separate or potential duplicates.",
+                [
+                    "work_type",
+                    "Work description",
+                    "location administrative fields",
+                    "latitude/longitude when verified",
+                    "IDA",
+                    "Constituency",
+                    "Sanction Date",
+                    "Sanction Amount ( â‚¹ )",
+                ],
+                evidence,
+                [left_record, right_record],
+                limitations,
+            )
+        )
+    return sorted(candidates, key=lambda item: item["result_id"])
+
+
 def peer_cost_candidates(records):
     groups = defaultdict(list)
     for record in records:
@@ -275,8 +563,9 @@ def peer_cost_candidates(records):
     return sorted(candidates, key=lambda item: item["result_id"])
 
 
-def detect(records):
+def detect(records, locations=None):
     results = duplicate_work_candidates(records)
+    results.extend(locality_duplicate_candidates(records, locations))
     return sorted(results, key=lambda item: (item["detector_id"], item["result_id"]))
 
 
@@ -310,11 +599,33 @@ def load_inputs(connection):
             (SANCTIONED_REPORT,),
         ).fetchall()
     ]
-    return batches, records
+    locations = {
+        (row[0], row[1], row[2]): {
+            "state": row[3],
+            "district": row[4],
+            "constituency": row[5],
+            "block_tehsil": row[6],
+            "ward_village": row[7],
+            "verified_address_text": row[8],
+            "latitude": row[9],
+            "longitude": row[10],
+            "location_source": row[11],
+            "location_status": row[12],
+            "last_verified_at": row[13].isoformat() if row[13] else None,
+        }
+        for row in connection.execute(
+            "SELECT DISTINCT ON (source_sha256, parser_version, record_number) "
+            "source_sha256, parser_version, record_number, state, district, constituency, "
+            "block_tehsil, ward_village, verified_address_text, latitude, longitude, "
+            "location_source, location_status, last_verified_at FROM mplads_work_location "
+            "ORDER BY source_sha256, parser_version, record_number, last_verified_at DESC NULLS LAST, location_id DESC"
+        ).fetchall()
+    }
+    return batches, records, locations
 
 
-def build_run(source_batches, records):
-    results = detect(records)
+def build_run(source_batches, records, locations=None):
+    results = detect(records, locations)
     results_sha256 = identifier(results)
     run = {
         "run_id": identifier(
@@ -421,10 +732,10 @@ def main():
         ) as connection:
             if args.create_tables:
                 connection.execute(DDL)
-            batches, records = load_inputs(connection)
+            batches, records, locations = load_inputs(connection)
             if not records:
                 parser.exit(1, "No staged Works Sanctioned detail records found.\n")
-            run, results = build_run(batches, records)
+            run, results = build_run(batches, records, locations)
             changed = stage_run(connection, run, results)
         counts = {
             detector_id: sum(item["detector_id"] == detector_id for item in results)

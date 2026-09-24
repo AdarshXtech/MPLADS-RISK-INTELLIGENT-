@@ -20,6 +20,7 @@ from backend.investigations import (
     investigation_summary,
     list_candidates,
 )
+from backend.locations import DDL as LOCATION_DDL
 
 
 def record(number):
@@ -62,6 +63,7 @@ def investigation_connection():
             sql.SQL("SET LOCAL search_path TO {}").format(sql.Identifier(schema))
         )
         connection.execute(DETECTOR_DDL)
+        connection.execute(LOCATION_DDL)
         records = [record(1), record(2)]
         run, results = build_run(
             [
@@ -102,7 +104,27 @@ def test_queue_lists_real_detector_evidence(investigation_connection):
     assert page.items[0].result_id == result_id
     assert page.items[0].group_size == 2
     assert page.items[0].status == "NEW"
-    assert len(candidate_detail(connection, result_id).source_records) == 2
+    detail = candidate_detail(connection, result_id)
+    assert len(detail.source_records) == 2
+    assert detail.source_records[0].location["status"] == "ADMINISTRATIVE_ONLY"
+
+
+def test_queue_filters_location_status_and_locality(investigation_connection):
+    connection, _ = investigation_connection
+    page = list_candidates(
+        connection,
+        1,
+        20,
+        "",
+        "",
+        "",
+        "group_smallest",
+        "EXACT_CONTEXT",
+        "ADMINISTRATIVE_ONLY",
+    )
+    assert page.total == 1
+    assert page.localities == ["EXACT_CONTEXT"]
+    assert page.location_statuses == ["ADMINISTRATIVE_ONLY"]
 
 
 def test_summary_is_derived_from_latest_append_only_status(investigation_connection):

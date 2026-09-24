@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Download, LoaderCircle } from "lucide-react";
 
 export function ExportButton({ filters }: { filters: string }) {
   const [pending, setPending] = useState(false);
@@ -35,7 +36,7 @@ export function ExportButton({ filters }: { filters: string }) {
   }
 
   return <div className="queue-export">
-    <button type="button" onClick={download} disabled={pending}>{pending ? "Preparing CSV..." : "Export filtered CSV"}</button>
+    <button className="secondary-button" type="button" onClick={download} disabled={pending}>{pending ? <LoaderCircle className="spin" size={16} aria-hidden="true" /> : <Download size={16} aria-hidden="true" />}{pending ? "Preparing CSV..." : "Export filtered CSV"}</button>
     {message && <p role={failed ? "alert" : "status"}>{message}</p>}
   </div>;
 }

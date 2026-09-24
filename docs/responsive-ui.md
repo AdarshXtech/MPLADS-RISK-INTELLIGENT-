@@ -1,10 +1,18 @@
 # Responsive UI verification
 
+The 2026-09-25 Stitch adaptation is described in [design.md](design.md). The shared header, light navigation, sign-in, filters, source comparison and reviewer rail use the same responsive checks. `stitch-ui.spec.ts` additionally verifies password visibility with keyboard activation, side-by-side desktop evidence/review placement, stacked phone placement, pending review submission and truthful failed-service status.
+
+Verification on 2026-09-25: all 51 tests passed across Chromium, Firefox and WebKit. A final distance-display consistency fix was followed by a successful production rebuild and six focused UI checks in all three browsers, including zero versus unavailable distance. Updated focused screenshots are under `output/stitch-ui/`; route/state captures are under `output/responsiveness/`. These remain synthetic test artifacts.
+
 The existing application uses wrapping navigation, fluid filter columns, mobile candidate cards, responsive metric grids and wrapping evidence values. Desktop sidebars scroll when the available height is short. Buttons and primary action links have a minimum 44-pixel height.
 
 The shared skip link is explicitly tabbable, including in WebKit's default keyboard mode. Its main-content destination has `tabIndex=-1` so activation transfers focus without adding a second stop to normal Tab navigation.
 
 ## Screens and states
+
+The Suchak AI continuation adds `location-comparison.spec.ts`: actual logo loading and page titles, review workload navigation, India outline and map controls, exact A/B selection with Enter/Space support, co-located points, missing/invalid coordinates, larger groups, stale request cancellation, authenticated source membership, map/source failures and a delayed-map tablet layout regression. Labelled screenshots are written to `output/suchak-ui/<browser>/`; the actual local sign-in screenshots are `output/suchak-ui/login-desktop.png` and `login-phone.png`. No screenshot contains official review data.
+
+Final continuation verification: the expanded 66-test suite passed in Chromium, Firefox and WebKit. A final street-layer cleanup was followed by a production rebuild and all 15 focused map tests passing again. Map loading retains a stable shell so it does not shift the review form during a click. Attribution removal, Enter/Space activation and failed-source retry are explicitly asserted.
 
 The reproducible Playwright suite checks Chromium, Firefox and WebKit at these CSS viewport sizes:
 

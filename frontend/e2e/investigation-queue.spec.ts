@@ -8,12 +8,12 @@ test("reviewer can filter, paginate, inspect evidence and save an action", async
   await expect(page).toHaveURL(/\/login/);
 
   await page.getByLabel("Username").fill("wrong");
-  await page.getByLabel("Password").fill("wrong");
+  await page.getByLabel("Password", { exact: true }).fill("wrong");
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.getByText("The username or password is incorrect.", { exact: true })).toBeVisible();
 
   await page.getByLabel("Username").fill(process.env.MPLADS_E2E_USERNAME!);
-  await page.getByLabel("Password").fill(process.env.MPLADS_E2E_PASSWORD!);
+  await page.getByLabel("Password", { exact: true }).fill(process.env.MPLADS_E2E_PASSWORD!);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.getByRole("heading", { name: "Investigation Queue" })).toBeVisible();
 
@@ -30,10 +30,14 @@ test("reviewer can filter, paginate, inspect evidence and save an action", async
   await page.getByLabel("Search evidence").fill(`hall ${candidateNumber}`);
   await page.getByLabel("State").selectOption(candidateNumber % 2 ? "Test State One" : "Test State Two");
   await page.getByLabel("Review status").selectOption("NEW");
+  await page.getByLabel("Locality comparison").selectOption("ward_village");
+  await page.getByLabel("Location status").selectOption(candidateNumber % 2 ? "VERIFIED_COORDINATES" : "ADMINISTRATIVE_ONLY");
   await page.getByRole("button", { name: "Apply filters" }).click();
   await expect(page.locator(".queue-table").getByText(`Synthetic community hall ${candidateNumber}`, { exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Review evidence" }).first().click();
   await expect(page.getByRole("heading", { name: "Why this was flagged" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Locality and supporting evidence" })).toBeVisible();
+  await expect(page.getByText("Location status", { exact: true }).first()).toBeVisible();
   await expect(page.locator(".always-cards .source-card")).toHaveCount(2);
   await expect(page.locator(".always-cards .source-card").first()).toBeVisible();
   await page.getByLabel("Next status").selectOption("UNDER_REVIEW");
@@ -64,7 +68,7 @@ test("filtered CSV downloads all pages and reports failures without leaving the 
   expect(unauthenticated.headers()["cache-control"]).toContain("no-store");
   await page.goto("/login");
   await page.getByLabel("Username").fill(process.env.MPLADS_E2E_USERNAME!);
-  await page.getByLabel("Password").fill(process.env.MPLADS_E2E_PASSWORD!);
+  await page.getByLabel("Password", { exact: true }).fill(process.env.MPLADS_E2E_PASSWORD!);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.getByRole("heading", { name: "Investigation Queue" })).toBeVisible();
   await page.getByRole("link", { name: "Next" }).click();
@@ -107,7 +111,7 @@ test("queue supports keyboard focus and a phone layout", async ({ page }) => {
   await page.keyboard.press("Tab");
   await expect(page.getByLabel("Username")).toBeFocused();
   await page.getByLabel("Username").fill(process.env.MPLADS_E2E_USERNAME!);
-  await page.getByLabel("Password").fill(process.env.MPLADS_E2E_PASSWORD!);
+  await page.getByLabel("Password", { exact: true }).fill(process.env.MPLADS_E2E_PASSWORD!);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.getByRole("heading", { name: "Investigation Queue" })).toBeVisible();
   await page.goto("/investigation-queue?sort=unsupported");

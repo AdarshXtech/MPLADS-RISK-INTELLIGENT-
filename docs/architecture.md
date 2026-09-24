@@ -1,6 +1,6 @@
 # Architecture
 
-Updated 2026-09-07. Distinguish the existing implementation from the intended design.
+Updated 2026-09-25. Distinguish the existing implementation from the intended design.
 
 ## Existing system
 
@@ -10,7 +10,14 @@ Standalone CSV inspection and lossless staging cover six supplied reports. Postg
 
 The ingestion API exposes only aggregate source metadata. The Next.js Command Centre and Investigation Queue require a signed local reviewer session; the protected backend workload endpoint also requires the review API key. Search, filtering and a closed set of sort orders execute in PostgreSQL before pagination. The CSV route validates the session before calling the key-protected backend export endpoint and preserves the selected order. Database credentials and the review API key stay server-side. See [deployment readiness](deployment.md) for the private staging boundary and production blockers.
 
+## Implemented frontend design
+
+The supplied Stitch references are reimplemented in the existing Next.js routes. `QueueShell` owns the dark product/session header and light navigation. CSS reflows the evidence view between a wide evidence/review split and a single column. The new `PasswordField` manages visibility locally; `SubmitButton` reads React form pending state without changing the login/review Server Actions. Lucide provides navigation/action icons. All metrics and source comparisons retain the existing API boundary. See [design.md](design.md) for tokens, page ownership and excluded illustrative reference content.
+
+The current Suchak AI identity is shared by `Brand`, page metadata and the authenticated shell. `ReviewOverview` uses the existing investigation summary, without a new analytics endpoint. `LocationComparison` dynamically loads a browser-only Leaflet canvas and local India reference GeoJSON. Only verified source coordinates create A/B markers. The Next.js source route checks the signed session and candidate/source membership before returning a private, no-store record from the existing protected candidate API. The detail payload contains the available provenance, cleaned/derived values, validation and location fields, not an invented project model. Optional OpenStreetMap tiles are browser requests; the default map requires no third-party request. No detector, database schema or review persistence changes are introduced by this map.
+
 ## Intended design, not implemented
+
 
 Use one Next.js frontend, one FastAPI/analytics backend and PostgreSQL. Keep ingestion and analysis in the Python project rather than introducing services or agent frameworks. Choose tables, source mappings and validation schemas only after inspecting actual input files.
 
@@ -43,6 +50,14 @@ Next.js owns the signed reviewer session and makes protected server-to-server ca
 - Data-quality issues remain in staging records and do not increase severity or create detector results.
 - Unsupported detectors are recorded with missing inputs. The peer-cost implementation is disabled after measured calibration produced an unusably broad result set.
 - The application role may select and insert detector data but cannot update or delete it. Initial table creation requires an administrative connection.
+
+## Reviewed location and locality-screening contract
+
+`mplads_work_location` is an append-only, provenance-linked snapshot table. It stores reviewed State, district, constituency, block/tehsil, ward/village, verified address text, coordinates, source, status and verification timestamp alongside separate original, cleaned and derived JSON values. It references a staged source record rather than replacing source data. A location correction produces a new content-addressed snapshot; selecting the latest verified timestamp never changes earlier snapshots.
+
+The location import CLI accepts only a documented CSV contract and validates source provenance, coordinate pairs, geographic bounds, status rules and timezone-aware verification timestamps. It does not call an external geocoder. PostgreSQL built-in numeric columns and a deterministic Haversine fallback are used because the project-local PostgreSQL deployment has no verified PostGIS extension. The radius is configuration, not a factual boundary.
+
+Engine version 3 executes the retained exact-context detector version 1 and a separate locality-aware detector version 1. The latter indexes administrative locality and description tokens before checking candidate pairs, then requires same work type, locality, meaningful description similarity and corroboration. Detector runs/results remain immutable. Investigation responses add location details without changing detector evidence; queue order remains unchanged unless a filter or existing sort is selected.
 
 ## Verification gates
 
