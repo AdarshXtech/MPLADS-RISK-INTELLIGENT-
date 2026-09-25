@@ -1,5 +1,18 @@
 # Technical decisions
 
+## 2026-09-25: Use one Suchak AI shell across all implemented frontend routes
+
+- **Decision:** Reimplement the supplied Stitch visual system as one shared Suchak AI workspace shell for sign-in, Command Centre, Investigation Queue, candidate evidence and Data Quality.
+- **Problem:** Earlier changes mixed a newer Suchak AI treatment with the previous route shell, so navigation could reveal a visibly different interface and controls could overlap at narrow widths.
+- **Alternatives:** Copy each exported HTML screen as an independent page, preserve the mixed interfaces, or apply only a colour change. Independent copies would duplicate navigation and introduce mock controls and figures that are not backed by the product.
+- **Selected approach:** Use the supplied dark identity header, compact operational navigation, dense evidence modules, semantic status colours and restrained geometry. Map them only to existing working routes and source-backed values. Keep the two-point India map and on-click source retrieval in the evidence workflow.
+- **Library selection:** Not applicable. Existing Next.js, Lucide and Leaflet components are retained.
+- **Trade-offs:** The product does not display Stitch-only Audit Ledger, global search, clearance or enforcement controls because those workflows are not implemented. Styling is added as an override layer to preserve existing tested component behaviour.
+- **Performance impact:** No new dependency, client bundle or remote asset was added.
+- **Maintainability impact:** All authenticated pages use `QueueShell`; responsive layout tokens remain centralised in `globals.css`.
+- **Security impact:** Authentication and server actions are unchanged. Reviewer identifiers are visually truncated without altering their full stored value.
+- **Affected files:** `frontend/app/globals.css`, `frontend/app/investigation-queue/shell.tsx`, `frontend/app/login/page.tsx`, `docs/design.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+
 ## 2026-09-25: Integrate Suchak AI with the advanced remote branch
 
 - **Decision:** Merge the remote master history into the Suchak AI implementation before a normal push to the user-confirmed repository.

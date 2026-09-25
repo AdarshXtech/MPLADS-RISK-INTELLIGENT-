@@ -2,6 +2,8 @@
 
 This document describes the implementation that exists in the repository on 2026-09-25. It does not describe planned behaviour as if it were implemented.
 
+All authenticated frontend routes render through `QueueShell`. Its Suchak AI header exposes the implemented Overview, Risk Triage and Source Quality destinations; the desktop operational sidebar exposes the same routes with their product names. Below 70rem the header navigation is removed and the sidebar navigation becomes a full-width route bar. Candidate evidence retains a two-column evidence and reviewer layout on wide screens and stacks it on smaller screens. Authentication, API requests and persistence are unchanged by this presentation layer.
+
 On Command Centre, `ReviewerDashboard()` loads the data overview and investigation summary, renders pending review workload and review progress below the page heading, then renders scope, interpretation notice and source-data sections. The workload link opens `/investigation-queue?status=NEW`; the existing queue route applies that filter to its API request. Data Quality continues to render the source-data view without requesting investigation summary. The authenticated reviewer ID and data-service status appear in the shared Suchak AI header.
 
 The optional `backend.near_duplicate` CLI reads the unchanged sanctioned-work CSV with `ingest.inspect_csv`, groups different Work IDs by exact administrative/date/amount context, and computes description similarity for non-identical descriptions. It prints a bounded calibration report without writing PostgreSQL or modifying `backend.detectors.detect()`. The website, latest reviewable run and 174 existing groups are unchanged. Fraud probability remains unavailable.

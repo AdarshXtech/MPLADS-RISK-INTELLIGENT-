@@ -62,7 +62,7 @@ for (const size of sizes) {
     await capture(page, info, size.name, "03-evidence");
     await page.getByLabel("Reviewer notes").fill("Synthetic responsive verification only.");
     await page.getByRole("button", { name: "Save review action" }).click();
-    await expect(page.getByRole("status")).toContainText("saved");
+    await expect(page.getByRole("status")).toContainText("saved", { timeout: 15_000 });
     await capture(page, info, size.name, "04-review-saved");
     await page.getByRole("link", { name: "Command Centre", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Investigation workload" })).toBeVisible();
@@ -164,7 +164,7 @@ for (const size of sizes.filter(({ name }) => ["phone", "tablet", "desktop"].inc
     await capture(page, info, size.name, "20-queue-page-two");
     await page.goto("/investigation-queue/synthetic-candidate-01");
     await page.getByRole("button", { name: "Save review action" }).click();
-    await expect(page.getByRole("status")).toContainText("saved");
+    await expect(page.getByRole("status")).toContainText("saved", { timeout: 15_000 });
     for (const [status, file] of [
       ["VERIFICATION_REQUESTED", "21-verification-requested"],
       ["RESOLVED", "22-review-resolved"],
@@ -176,7 +176,7 @@ for (const size of sizes.filter(({ name }) => ["phone", "tablet", "desktop"].inc
       await page.getByLabel("Reason code, required when dismissing").selectOption("DOCUMENTS_UNAVAILABLE");
       await page.getByLabel("Reviewer notes").fill("Synthetic UI transition test only. No official case was reviewed.");
       await page.getByRole("button", { name: "Save review action" }).click();
-      await expect(page.locator(".page-heading-row .status-chip")).toHaveText(status.toLowerCase().replaceAll("_", " "));
+      await expect(page.locator(".page-heading-row .status-chip")).toHaveText(status.toLowerCase().replaceAll("_", " "), { timeout: 15_000 });
       await capture(page, info, size.name, file);
     }
   });

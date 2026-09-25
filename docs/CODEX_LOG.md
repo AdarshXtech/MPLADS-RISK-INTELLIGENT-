@@ -1,5 +1,14 @@
 # Codex log
 
+## 2026-09-25: Consolidate supplied UI screens into Suchak AI
+
+- **Task:** Remove the visible overlap between the previous interface and the supplied Stitch screens across every implemented frontend route.
+- **References reviewed:** Seven `stitch_mplads_design_system` archives, including login, dashboard, triage, comparison and ledger concepts. Archive HTML, sample figures, credentials and unsupported legal/enforcement controls were treated as reference material only.
+- **Implementation:** Added one dark Suchak AI identity header, compact desktop sidebar, responsive route bar, source-service state, restrained panel system, five-column metrics, dense queue filters, evidence comparison layout, sticky review rail and a matching sign-in surface. Existing logo, authentication, filters, CSV export, review transitions, source provenance and exact two-point India map remain functional. Added an explicit accessible name to the icon-only mobile sign-out button and constrained long reviewer IDs.
+- **Scope boundary:** Stitch-only search, clearance, enforcement and national audit-ledger controls were not shown because no working backend workflow exists for them. No mock government figures were copied.
+- **Verification:** ESLint and the Next.js production build passed. Chromium responsive and interaction suites passed 14 tests across 320x568 through 1920x1080. The full suite passed 63 of 66 on the first run; three WebKit server-action assertions exceeded the default five-second expectation while all layout, navigation and map checks passed. The two immediate reruns passed, and the remaining long review sequence passed after giving its real status redirect up to 15 seconds. Chromium, Firefox and WebKit therefore passed every selected workflow. Tests cover keyboard access, long evidence, loading, empty, error and review states.
+- **Files modified:** Shared shell, sign-in page, global styles, design/decision/flow/session documentation. No dependencies or backend flows changed.
+
 ## 2026-09-25: Fix Backend CI investigation fixture
 
 - Task: Diagnose Actions run `36086492540`, Backend job `107919452404` at `a976b68`.

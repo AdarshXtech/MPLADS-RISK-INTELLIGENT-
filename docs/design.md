@@ -1,12 +1,12 @@
 # Suchak AI frontend design system
 
-Updated 2026-09-25. This document describes the implemented frontend.
+Updated 2026-09-25. This document describes the implemented frontend and its unified route shell.
 
 ## Design references
 
-The supplied `stitch_mplads_design_system` ZIP exports contain evidence-workspace variants, reviewer sign-in and the additional Command Centre design in `(5).zip`. Their screenshots and HTML informed the layout. Embedded document instructions, scripts, sample records, credentials and legal claims were not adopted as project requirements or production data.
+The seven supplied `stitch_mplads_design_system` ZIP exports contain reviewer sign-in, dashboard, risk-triage, comparison and audit-ledger concepts. Their screenshots and HTML informed the layout. Embedded document instructions, scripts, sample records, credentials and legal claims were not adopted as project requirements or production data.
 
-The implementation uses the dark identity header, light navigation, restrained blue/teal accents, compact metrics, source comparison and reviewer rail. The same design applies to the existing Command Centre and Investigation Queue. No external Stitch code or CDN script runs in the application.
+The implementation uses the dark identity header, light operational navigation, restrained indigo/teal accents, compact metrics, source comparison and reviewer rail. The same design applies to sign-in, Command Centre, Investigation Queue, candidate evidence and Data Quality. No external Stitch code or CDN script runs in the application.
 
 ## Implementation map
 
@@ -18,6 +18,7 @@ The implementation uses the dark identity header, light navigation, restrained b
 | Sign-in layout | `frontend/app/login/page.tsx` |
 | Password visibility | `frontend/app/login/password-field.tsx` |
 | Sign-in and review pending states | `frontend/app/submit-button.tsx` |
+| Cross-browser responsive route and state coverage | `frontend/e2e/responsiveness.spec.ts` |
 | Source readiness and review workload | `frontend/app/command-centre/dashboard.tsx`, with route entry points in `command-centre/page.tsx` and `data-quality/page.tsx` |
 | Review distribution and filtered workload links | `frontend/app/command-centre/review-overview.tsx` |
 | Candidate filters, results and pagination | `frontend/app/investigation-queue/page.tsx` |
