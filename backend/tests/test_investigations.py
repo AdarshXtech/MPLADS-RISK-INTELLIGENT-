@@ -100,10 +100,10 @@ def investigation_connection():
 def test_queue_lists_real_detector_evidence(investigation_connection):
     connection, result_id = investigation_connection
     page = list_candidates(connection, 1, 20, "community hall", "Test State", "NEW")
-    assert page.total == 1
-    assert page.items[0].result_id == result_id
-    assert page.items[0].group_size == 2
-    assert page.items[0].status == "NEW"
+    assert page.total == 2
+    assert result_id in {item.result_id for item in page.items}
+    assert all(item.group_size == 2 for item in page.items)
+    assert all(item.status == "NEW" for item in page.items)
     detail = candidate_detail(connection, result_id)
     assert len(detail.source_records) == 2
     assert detail.source_records[0].location["status"] == "ADMINISTRATIVE_ONLY"
@@ -123,7 +123,7 @@ def test_queue_filters_location_status_and_locality(investigation_connection):
         "ADMINISTRATIVE_ONLY",
     )
     assert page.total == 1
-    assert page.localities == ["EXACT_CONTEXT"]
+    assert page.localities == ["EXACT_CONTEXT", "state"]
     assert page.location_statuses == ["ADMINISTRATIVE_ONLY"]
 
 
@@ -131,8 +131,8 @@ def test_summary_is_derived_from_latest_append_only_status(investigation_connect
     connection, result_id = investigation_connection
     initial = investigation_summary(connection)
     assert initial.model_dump() == {
-        "total_candidates": 1,
-        "new": 1,
+        "total_candidates": 2,
+        "new": 2,
         "under_review": 0,
         "verification_requested": 0,
         "resolved": 0,
@@ -145,8 +145,8 @@ def test_summary_is_derived_from_latest_append_only_status(investigation_connect
         "synthetic-reviewer",
     )
     reviewed = investigation_summary(connection)
-    assert reviewed.total_candidates == 1
-    assert reviewed.new == 0
+    assert reviewed.total_candidates == 2
+    assert reviewed.new == 1
     assert reviewed.under_review == 1
 
 
@@ -241,7 +241,12 @@ def test_export_matches_filters_preserves_provenance_and_latest_review(
     assert row["run_id"]
     assert len(json.loads(row["source_records"])) == 2
     assert "not probability" in row["confidence_meaning"]
-    empty = export_candidates(connection, "", "", "NEW")
+    pending = export_candidates(connection, "", "", "NEW")
+    pending_rows = list(csv.DictReader(io.StringIO(pending.decode("utf-8-sig"))))
+    assert len(pending_rows) == 1
+    assert pending_rows[0]["result_id"] != result_id
+    assert pending_rows[0]["status"] == "NEW"
+    empty = export_candidates(connection, "", "", "RESOLVED")
     assert list(csv.DictReader(io.StringIO(empty.decode("utf-8-sig")))) == []
     assert (
         connection.execute("SELECT count(*) FROM mplads_review_event").fetchone()[0]
@@ -260,7 +265,7 @@ def test_export_includes_all_pages_and_search_is_literal(investigation_connectio
     )
     assert len(list_candidates(connection, 1, 20, "", "", "").items) == 20
     exported = export_candidates(connection, "", "", "")
-    assert len(list(csv.DictReader(io.StringIO(exported.decode("utf-8-sig"))))) == 25
+    assert len(list(csv.DictReader(io.StringIO(exported.decode("utf-8-sig"))))) == 26
     for query in ["%", "__no_such_literal__", "' OR 1=1 --"]:
         assert list_candidates(connection, 1, 20, query, "", "").total == 0
         assert (
@@ -299,7 +304,12 @@ def test_queue_and_export_use_selected_stable_sort(investigation_connection):
 
     smallest = list_candidates(connection, 1, 20, "", "", "", "group_smallest")
     largest = list_candidates(connection, 1, 20, "", "", "", "group_largest")
-    assert smallest.items[0].result_id == result_id
+    small_ids = sorted(
+        item.result_id for item in smallest.items if item.group_size == 2
+    )
+    assert len(small_ids) == 2
+    assert result_id in small_ids
+    assert [item.result_id for item in smallest.items] == [*small_ids, large_id]
     assert largest.items[0].result_id == large_id
     assert largest.items[0].group_size == 4
 

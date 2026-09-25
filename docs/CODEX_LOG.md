@@ -7,6 +7,7 @@
 - Fix: Move location DDL immediately after source-table creation in `backend/tests/test_investigations.py`. Preserve foreign-key enforcement, synthetic records and rollback isolation. Production initialisation already orders these tables correctly; no application behaviour or database content changes.
 - Verification: Local pytest: 49 passed, 14 skipped because `TEST_DATABASE_URL` is absent. Ruff lint passed; formatting applied. Used the existing uv-managed environment because uv is not on PATH. The existing ten PostgreSQL investigation tests cover this setup; hosted CI verification follows publication.
 - Files modified: The investigation test fixture and this log. No new files, dependencies or execution-flow changes. Remaining validation: PostgreSQL-backed CI run.
+- Follow-up: Run `36088070337` cleared all setup errors and exposed six outdated assertions (57 passed). The fixture now yields both exact-context and locality candidates. Updated counts, locality options, pending export checks, pagination totals and stable-sort ties to assert both detector outputs, without filtering or suppressing production results. Hosted verification is repeated after this correction.
 
 ## 2026-09-25: Prepare Suchak AI changes for GitHub publication
 
