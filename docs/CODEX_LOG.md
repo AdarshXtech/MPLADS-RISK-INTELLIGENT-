@@ -1,5 +1,13 @@
 # Codex log
 
+## 2026-09-25: Fix Backend CI investigation fixture
+
+- Task: Diagnose Actions run `36086492540`, Backend job `107919452404` at `a976b68`.
+- Root cause: The logs show 53 passed and 10 setup errors. `investigation_connection` created `mplads_work_location` before its foreign-key target `mplads_source_record`, causing PostgreSQL `UndefinedTable`.
+- Fix: Move location DDL immediately after source-table creation in `backend/tests/test_investigations.py`. Preserve foreign-key enforcement, synthetic records and rollback isolation. Production initialisation already orders these tables correctly; no application behaviour or database content changes.
+- Verification: Local pytest: 49 passed, 14 skipped because `TEST_DATABASE_URL` is absent. Ruff lint passed; formatting applied. Used the existing uv-managed environment because uv is not on PATH. The existing ten PostgreSQL investigation tests cover this setup; hosted CI verification follows publication.
+- Files modified: The investigation test fixture and this log. No new files, dependencies or execution-flow changes. Remaining validation: PostgreSQL-backed CI run.
+
 ## 2026-09-25: Prepare Suchak AI changes for GitHub publication
 
 - **Task:** Publish the staged UI, reviewed-location backend, assets, tests and documentation to the user-confirmed `AdarshXtech/MPLADS-RISK-INTELLIGENT-` repository.

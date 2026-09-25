@@ -63,7 +63,6 @@ def investigation_connection():
             sql.SQL("SET LOCAL search_path TO {}").format(sql.Identifier(schema))
         )
         connection.execute(DETECTOR_DDL)
-        connection.execute(LOCATION_DDL)
         records = [record(1), record(2)]
         run, results = build_run(
             [
@@ -81,6 +80,7 @@ def investigation_connection():
             "record_number integer, cleaned_values jsonb, derived_values jsonb, "
             "validation_issues jsonb, PRIMARY KEY(source_sha256,parser_version,record_number))"
         )
+        connection.execute(LOCATION_DDL)
         for item in records:
             connection.execute(
                 "INSERT INTO mplads_source_record VALUES (%s,%s,%s,%s,%s,%s)",
