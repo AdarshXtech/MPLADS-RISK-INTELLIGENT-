@@ -4,7 +4,7 @@ Updated 2026-09-25. Distinguish the existing implementation from the intended de
 
 ## Existing system
 
-Next.js renders a data-readiness command centre. Its Server Component requests aggregate ingestion metadata from FastAPI. FastAPI returns status JSON from `/` and `/health`, and reads the two PostgreSQL staging tables for `/data-overview`. The `backend` console entry point still prints a greeting and does not start the ASGI server. See [flow.md](flow.md) for actual function calls.
+Next.js renders a data-readiness Command Centre and a separate authenticated Data Quality route using shared source-data presentation. Data Quality requests aggregate ingestion metadata from FastAPI without requiring the investigation summary. FastAPI returns status JSON from `/` and `/health`, and reads the two PostgreSQL staging tables for `/data-overview`. The `backend` console entry point still prints a greeting and does not start the ASGI server. See [flow.md](flow.md) for actual function calls.
 
 Standalone CSV inspection and lossless staging cover six supplied reports. PostgreSQL stores original, cleaned and derived records with source identity. Deterministic detector runs/results remain immutable; review transitions are persisted separately as append-only events. Persistence and idempotency are verified against PostgreSQL 17.11. No typed project model or risk aggregation exists. See [ingestion.md](ingestion.md) and [detection-rules.md](detection-rules.md).
 

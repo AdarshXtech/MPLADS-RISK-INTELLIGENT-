@@ -257,7 +257,9 @@ def investigation_summary(connection) -> InvestigationSummary:
     )
 
 
-def candidate_filter(query: str, state: str, status: str, locality: str, location_status: str):
+def candidate_filter(
+    query: str, state: str, status: str, locality: str, location_status: str
+):
     clauses = ["1=1"]
     parameters: list[object] = []
     if query:
@@ -270,7 +272,9 @@ def candidate_filter(query: str, state: str, status: str, locality: str, locatio
         clauses.append("COALESCE(last_event.to_status, 'NEW') = %s")
         parameters.append(status)
     if locality:
-        clauses.append("COALESCE(r.evidence->'locality_evidence'->>'level', 'EXACT_CONTEXT') = %s")
+        clauses.append(
+            "COALESCE(r.evidence->'locality_evidence'->>'level', 'EXACT_CONTEXT') = %s"
+        )
         parameters.append(locality)
     if location_status:
         clauses.append(
@@ -293,7 +297,9 @@ def list_candidates(
     locality: str = "",
     location_status: str = "",
 ):
-    where, parameters = candidate_filter(query, state, status, locality, location_status)
+    where, parameters = candidate_filter(
+        query, state, status, locality, location_status
+    )
     total = connection.execute(
         "SELECT count(*) FROM (" + BASE_QUERY + where + ") candidates",
         parameters,
@@ -372,7 +378,9 @@ def export_candidates(
     location_status: str = "",
 ) -> bytes:
     """One statement gives the export a consistent PostgreSQL snapshot."""
-    where, parameters = candidate_filter(query, state, status, locality, location_status)
+    where, parameters = candidate_filter(
+        query, state, status, locality, location_status
+    )
     # ponytail: bounded in-memory CSV; use a background export if 10,000 groups are exceeded.
     rows = connection.execute(
         BASE_QUERY + where + " ORDER BY " + SORT_SQL[sort] + " LIMIT %s",
@@ -468,7 +476,11 @@ def candidate_detail(connection, result_id: str) -> CandidateDetail:
                 validation_issues=item[6],
                 location={
                     "status": item[16]
-                    or ("ADMINISTRATIVE_ONLY" if item[4].get("State") or item[4].get("Constituency") else "LOCATION_UNAVAILABLE"),
+                    or (
+                        "ADMINISTRATIVE_ONLY"
+                        if item[4].get("State") or item[4].get("Constituency")
+                        else "LOCATION_UNAVAILABLE"
+                    ),
                     "state": item[7] or item[4].get("State"),
                     "district": item[8],
                     "constituency": item[9] or item[4].get("Constituency"),

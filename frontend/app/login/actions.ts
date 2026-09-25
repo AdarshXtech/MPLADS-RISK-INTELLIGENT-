@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createSession, credentialsAreValid } from "@/lib/auth";
+import { createSession, credentialsAreValid, reportLoginFailure } from "@/lib/auth";
 
 export async function login(formData: FormData) {
   const username = String(formData.get("username") ?? "").trim();
@@ -9,13 +9,15 @@ export async function login(formData: FormData) {
   let valid = false;
   try {
     valid = credentialsAreValid(username, password);
-  } catch {
+  } catch (error) {
+    reportLoginFailure("credentials", error);
     redirect("/login?error=configuration");
   }
   if (!valid) redirect("/login?error=credentials");
   try {
     await createSession(username);
-  } catch {
+  } catch (error) {
+    reportLoginFailure("session", error);
     redirect("/login?error=configuration");
   }
   redirect("/investigation-queue");

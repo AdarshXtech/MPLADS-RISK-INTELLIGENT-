@@ -2,7 +2,29 @@
 
 This document describes the implementation that exists in the repository on 2026-09-25. It does not describe planned behaviour as if it were implemented.
 
+On Command Centre, `ReviewerDashboard()` loads the data overview and investigation summary, renders pending review workload and review progress below the page heading, then renders scope, interpretation notice and source-data sections. The workload link opens `/investigation-queue?status=NEW`; the existing queue route applies that filter to its API request. Data Quality continues to render the source-data view without requesting investigation summary. The authenticated reviewer ID and data-service status appear in the shared Suchak AI header.
+
+The optional `backend.near_duplicate` CLI reads the unchanged sanctioned-work CSV with `ingest.inspect_csv`, groups different Work IDs by exact administrative/date/amount context, and computes description similarity for non-identical descriptions. It prints a bounded calibration report without writing PostgreSQL or modifying `backend.detectors.detect()`. The website, latest reviewable run and 174 existing groups are unchanged. Fraud probability remains unavailable.
+
+Data Quality navigation now opens the authenticated `/data-quality` route, rather than a fragment on Command Centre. `frontend/app/command-centre/dashboard.tsx` renders the shared source-data view for both routes. Data Quality requests `GET /data-overview` only; Command Centre also requests the protected investigation summary. The Data Quality route has its own title, loading, empty and service-error states, with a retry link back to the same route. The 2026-09-10 fragment flow below is historical and superseded.
+
+The 2026-09-13 presentation pass changes no request or persistence path. Existing Command Centre totals now carry an explicit report-row, not unique-project, explanation with the actual source-batch count. Existing evidence and provenance summaries use plain text separators. CSS preserves word-level wrapping for prose, breaks only long identifiers as needed, and aligns the source panel to its content height.
+
+Historical 2026-09-10 behaviour: Data Quality navigation resolved to `#data-quality` on Command Centre. This was replaced by the dedicated route above.
+
+## 2026-09-09: Login failure diagnostics
+
+`frontend/app/login/actions.ts:login()` calls `credentialsAreValid()` and then `createSession()` in `frontend/lib/auth.ts`. An exception calls `reportLoginFailure()` with the `credentials` or `session` stage before retaining the existing `/login?error=configuration` redirect. The diagnostic contains only a bounded error category and presence booleans for the username, password and signing-secret runtime bindings. It contains no secret values or submitted form values. Normal invalid credentials still redirect to `error=credentials`; successful sessions retain the existing HTTP-only HMAC cookie.
+
+`npm run test:auth:worker` builds the OpenNext bundle and runs `e2e/cloudflare-auth.mjs`. The test starts local workerd instances sequentially with generated synthetic bindings, submits the real login form through Playwright, verifies session-cookie behaviour and checks safe diagnostics for each missing binding. The configured API target is local and does not access official data. Test files are confined to temporary directories under ignored `.wrangler` storage and removed after the run.
+
+Session files: frontend auth library, login Server Action, Worker login test, package scripts, generated-output lint exclusions, deployment troubleshooting guide, decisions, this flow record and CODEX_LOG. The live Cloudflare failure remains under investigation until the diagnostic patch is deployed and server logs are inspected.
+
+The deployment and login entries above retain their original dates; the current merged implementation is recorded on 2026-09-25.
+
 ## Current implementation status
+
+The publication merge retains the remote Data Quality route and Cloudflare/Render configuration. `backend.init_db` now initialises reviewed locations after the source tables, before detector and review tables. It creates no location observations. Merge files include the shared dashboard, shell, styles, investigations client, dependency lock, source-table browser assertion, database initialiser/test, formatting of the locality changes and this documentation.
 
 The repository contains a Next.js data-readiness command centre, an authenticated Investigation Queue, FastAPI aggregate and review endpoints, standalone inspection/ingestion commands, a deterministic detector command and a read-only human-review CSV export command. One potential-duplicate candidate rule is active. PostgreSQL staging, detector persistence and append-only review history are verified against the project-local PostgreSQL 17.11 service. Composite scores and project profiles remain unimplemented.
 
@@ -26,6 +48,38 @@ The shared `QueueShell` now renders product identity, actual reviewer identity, 
 `login/page.tsx` -> `PasswordField` toggles only the input visibility in the browser. Login and candidate forms -> `SubmitButton` -> `useFormStatus` show pending state and disable repeated clicks -> existing Server Action -> existing signed-session or FastAPI review flow. Password visibility does not submit the form. Export retains its authenticated fetch/download/error path and adds a download/pending icon.
 
 Files changed for this UI session: `frontend/app/globals.css`, `frontend/app/investigation-queue/shell.tsx`, `frontend/app/login/page.tsx`, new `frontend/app/login/password-field.tsx`, new `frontend/app/submit-button.tsx`, queue page, export button, candidate evidence page, frontend manifest/lock, existing browser tests, new `frontend/e2e/stitch-ui.spec.ts` and frontend design/supporting documentation. Existing uncommitted backend/locality changes remain separate from this presentation task.
+
+## Staging deployment flow: Cloudflare and Render
+
+The staging deployment architecture separates the public edge frontend from backend compute and storage:
+
+```text
+[Public Client]
+      │
+      ▼ HTTPS
+[Cloudflare Edge Workers / Pages]
+  ├── Next.js 16 SSR via @opennextjs/cloudflare (nodejs_compat)
+  ├── Session validation (HMAC SHA-256 signed cookie)
+  └── Server-to-server request dispatch
+      │
+      ▼ HTTPS (X-MPLADS-Review-Key authenticated)
+[Render Web Service]
+  ├── FastAPI backend (Python 3.12, Uvicorn, uv)
+  ├── require_review_key() validation
+  └── Read-only / append-only SQL execution
+      │
+      ▼ Encrypted TLS
+[Render Managed PostgreSQL]
+  ├── mplads_ingest_batch & mplads_source_record
+  ├── mplads_detector_run & mplads_detector_result
+  └── mplads_review_event (append-only audit history)
+```
+
+1. Cloudflare Workers executes server-rendered Next.js components and Server Actions.
+2. `resolveApiBaseUrl()` sanitises the configured backend host and `apiTimeoutMs()` provides up to 45 seconds to accommodate Render free-tier cold starts.
+3. Server-to-server fetch transmits the `X-MPLADS-Review-Key` header to the Render FastAPI backend.
+4. FastAPI validates the key with `hmac.compare_digest` before accessing PostgreSQL.
+5. All database operations strictly use connection pooling and TLS encryption.
 
 ## Frontend entry point
 
@@ -188,12 +242,12 @@ Not implemented. No composite risk score is calculated or displayed. Detector se
 
 ## Files changed in the current session
 
-- `.github/workflows/ci.yml`
-- `frontend/package-lock.json`
-- `docs/deployment.md`
+- `frontend/app/command-centre/dashboard.tsx`
+- `frontend/app/investigation-queue/shell.tsx`
+- `frontend/app/globals.css`
+- `frontend/e2e/investigation-queue.spec.ts`
 - `docs/decisions.md`
 - `docs/flow.md`
-- `docs/techstack.md`
 - `docs/CODEX_LOG.md`
 
 The earlier implementation inventory follows for historical context:

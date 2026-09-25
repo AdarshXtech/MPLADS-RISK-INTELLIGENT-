@@ -12,7 +12,6 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-
 LOCATION_STATUSES = {
     "VERIFIED_COORDINATES",
     "ADMINISTRATIVE_ONLY",
@@ -89,7 +88,7 @@ def _timestamp(value: str | None) -> datetime | None:
     if not value:
         return None
     try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(value)
     except ValueError as error:
         raise ValueError("last_verified_at must be an ISO 8601 timestamp") from error
     if parsed.tzinfo is None:
@@ -101,7 +100,9 @@ def clean_import_row(raw: dict[str, str]) -> dict:
     """Validate one reviewed import row without changing its source values."""
     missing_headers = set(IMPORT_FIELDS) - set(raw)
     if missing_headers:
-        raise ValueError(f"Location import is missing columns: {sorted(missing_headers)}")
+        raise ValueError(
+            f"Location import is missing columns: {sorted(missing_headers)}"
+        )
     cleaned = {field: _text(raw.get(field)) for field in IMPORT_FIELDS}
     try:
         cleaned["record_number"] = int(cleaned["record_number"] or "")
@@ -122,7 +123,9 @@ def clean_import_row(raw: dict[str, str]) -> dict:
         raise ValueError("latitude and longitude must be decimal values") from error
     if (latitude is None) != (longitude is None):
         raise ValueError("latitude and longitude must be supplied together")
-    if latitude is not None and not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+    if latitude is not None and not (
+        -90 <= latitude <= 90 and -180 <= longitude <= 180
+    ):
         raise ValueError("latitude or longitude is outside the permitted range")
     if cleaned["location_status"] == "VERIFIED_COORDINATES":
         if latitude is None or _timestamp(cleaned["last_verified_at"]) is None:
@@ -131,7 +134,10 @@ def clean_import_row(raw: dict[str, str]) -> dict:
             )
     elif latitude is not None:
         raise ValueError("coordinates require VERIFIED_COORDINATES status")
-    if cleaned["location_status"] == "ADDRESS_UNVERIFIED" and not cleaned["verified_address_text"]:
+    if (
+        cleaned["location_status"] == "ADDRESS_UNVERIFIED"
+        and not cleaned["verified_address_text"]
+    ):
         raise ValueError("ADDRESS_UNVERIFIED requires an address text")
     cleaned["latitude"] = latitude
     cleaned["longitude"] = longitude
@@ -159,7 +165,11 @@ def stage_locations(connection, rows: list[tuple[dict[str, str], dict]]) -> bool
         source = connection.execute(
             "SELECT derived_values FROM mplads_source_record WHERE source_sha256=%s "
             "AND parser_version=%s AND record_number=%s",
-            (cleaned["source_sha256"], cleaned["parser_version"], cleaned["record_number"]),
+            (
+                cleaned["source_sha256"],
+                cleaned["parser_version"],
+                cleaned["record_number"],
+            ),
         ).fetchone()
         if source is None:
             raise ValueError("Location import references an unstaged source record")
@@ -217,7 +227,9 @@ def stage_locations(connection, rows: list[tuple[dict[str, str], dict]]) -> bool
                 (location_id,),
             ).fetchone()
             if stored != (snapshot["cleaned"], {"work_id": work_id}):
-                raise ValueError("Existing location snapshot differs; refusing overwrite")
+                raise ValueError(
+                    "Existing location snapshot differs; refusing overwrite"
+                )
         else:
             changed = True
     return changed
@@ -236,13 +248,18 @@ def main():
 
     rows = read_import(args.source) if args.source else []
     try:
-        with psycopg.connect(os.environ["DATABASE_URL"], connect_timeout=5) as connection:
+        with psycopg.connect(
+            os.environ["DATABASE_URL"], connect_timeout=5
+        ) as connection:
             if args.create_tables:
                 connection.execute(DDL)
             changed = stage_locations(connection, rows) if rows else False
         print("Location snapshots staged" if changed else "No new location snapshots")
     except (psycopg.Error, ValueError):
-        parser.exit(1, "Location import failed; transaction rolled back. Check source provenance and reviewed values locally.\n")
+        parser.exit(
+            1,
+            "Location import failed; transaction rolled back. Check source provenance and reviewed values locally.\n",
+        )
 
 
 if __name__ == "__main__":

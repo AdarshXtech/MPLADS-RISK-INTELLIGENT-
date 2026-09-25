@@ -41,6 +41,8 @@ Phase 0 is partial. Field inspection, file ingestion and PostgreSQL staging now 
 
 ## Current implementation
 
+The Data Quality navigation now opens a separate authenticated route for source counts, validation issues and provenance. It uses the existing overview endpoint and does not add a risk detector.
+
 The frontend adopts the supplied Stitch visual references through a shared product header, light navigation, compact metrics, source comparison, a responsive reviewer rail and a refreshed sign-in form. Only implemented controls and API-backed evidence are displayed. See [frontend design](design.md) for the exact component map and design boundaries.
 
 The Next.js root redirects to an authenticated, server-rendered Command Centre backed by FastAPI and PostgreSQL. It shows real queue workload by append-only review status alongside ingestion readiness. The backend retains the exact-context potential-duplicate detector version 1 and adds a separate locality-aware version 1 detector. The latter is ready for reviewed administrative locations and coordinates, but no reviewed location import has been supplied for the current data. These are verification candidates, not duplicate findings. The queue supports server-side search, State/status/locality/location-status filters, sorting, pagination, filtered CSV, evidence/provenance inspection and append-only review transitions. A peer-cost rule remains disabled because its 3,016 calibration candidates were too broad. No composite score or project dossier exists. See [feature connections](feature-connections.md), [actual flow](flow.md), [deployment readiness](deployment.md), [detector rules](detection-rules.md), [data inventory](data-dictionary.md) and [ingestion instructions](ingestion.md).

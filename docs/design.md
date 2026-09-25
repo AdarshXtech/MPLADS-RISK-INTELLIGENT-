@@ -18,7 +18,7 @@ The implementation uses the dark identity header, light navigation, restrained b
 | Sign-in layout | `frontend/app/login/page.tsx` |
 | Password visibility | `frontend/app/login/password-field.tsx` |
 | Sign-in and review pending states | `frontend/app/submit-button.tsx` |
-| Source readiness and review workload | `frontend/app/command-centre/page.tsx` |
+| Source readiness and review workload | `frontend/app/command-centre/dashboard.tsx`, with route entry points in `command-centre/page.tsx` and `data-quality/page.tsx` |
 | Review distribution and filtered workload links | `frontend/app/command-centre/review-overview.tsx` |
 | Candidate filters, results and pagination | `frontend/app/investigation-queue/page.tsx` |
 | CSV download with pending/error/success states | `frontend/app/investigation-queue/export-button.tsx` |

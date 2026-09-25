@@ -4,6 +4,8 @@ test("reviewer can filter, paginate, inspect evidence and save an action", async
   const candidateNumber = { chromium: 1, firefox: 2, webkit: 3 }[testInfo.project.name] ?? 1;
   await page.goto("/command-centre");
   await expect(page).toHaveURL(/\/login/);
+  await page.goto("/data-quality");
+  await expect(page).toHaveURL(/\/login/);
   await page.goto("/investigation-queue");
   await expect(page).toHaveURL(/\/login/);
 
@@ -54,12 +56,28 @@ test("reviewer can filter, paginate, inspect evidence and save an action", async
   await page.getByRole("link", { name: "Command Centre" }).click();
   await expect(page.getByRole("heading", { name: "Risk Command Centre" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Investigation workload" })).toBeVisible();
+  await expect(page.getByText(process.env.MPLADS_E2E_USERNAME!, { exact: true })).toHaveCount(1);
+  await expect(page.getByText("These totals count rows across 1 source report, not unique projects.", { exact: false })).toBeVisible();
+  await expect(page.getByText("Across the staged source report")).toBeVisible();
+  await expect(page.locator("#data-quality .count-badge")).toHaveText("1 source");
+  await expect(page.getByText("1 sources", { exact: true })).toHaveCount(0);
+  await expect(page.locator("main .workload-panel, main .scope-strip").first()).toHaveClass(/workload-panel/);
   await expect(page.locator(".workload-panel").getByText("25", { exact: true }).first()).toBeVisible();
-  await page.getByRole("link", { name: "Open Investigation Queue" }).click();
+  expect(
+    await page.locator(".provenance").first().evaluate((element) => Number.parseFloat(window.getComputedStyle(element).fontSize)),
+  ).toBeCloseTo(12.8, 1);
+  expect(
+    await page.locator(".review-list p").first().evaluate((element) => Number.parseFloat(window.getComputedStyle(element).fontSize)),
+  ).toBeCloseTo(12.8, 1);
+  await page.getByRole("link", { name: "Review pending candidates" }).click();
   await expect(page.getByRole("heading", { name: "Investigation Queue" })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Review status", exact: true })).toHaveValue("NEW");
   await page.getByRole("link", { name: "Command Centre" }).click();
   await page.getByRole("link", { name: "Data Quality" }).click();
-  await expect(page).toHaveURL(/#data-quality$/);
+  await expect(page).toHaveURL(/\/data-quality$/);
+  await expect(page.getByRole("heading", { name: "Data Quality", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Data Quality" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("heading", { name: "Ingested source reports" })).toBeVisible();
 });
 
 test("filtered CSV downloads all pages and reports failures without leaving the queue", async ({ page }) => {

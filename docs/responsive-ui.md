@@ -1,8 +1,14 @@
 # Responsive UI verification
 
+Publication merge on 2026-09-25: dedicated Data Quality navigation and pending-review ordering are retained with the Suchak AI design. The merged suite passed 63 browser checks and exposed a source-count selector collision in three browsers. After scoping the selector to the source section, all nine queue checks passed in the focused rerun. This covers the changed navigation, provenance text sizing, review submission, filtering, export and Data Quality active state alongside the passing map/responsive checks.
+
 The 2026-09-25 Stitch adaptation is described in [design.md](design.md). The shared header, light navigation, sign-in, filters, source comparison and reviewer rail use the same responsive checks. `stitch-ui.spec.ts` additionally verifies password visibility with keyboard activation, side-by-side desktop evidence/review placement, stacked phone placement, pending review submission and truthful failed-service status.
 
 Verification on 2026-09-25: all 51 tests passed across Chromium, Firefox and WebKit. A final distance-display consistency fix was followed by a successful production rebuild and six focused UI checks in all three browsers, including zero versus unavailable distance. Updated focused screenshots are under `output/stitch-ui/`; route/state captures are under `output/responsiveness/`. These remain synthetic test artifacts.
+
+The Data Quality sidebar item now opens `/data-quality` with a distinct heading, active navigation state and loading, empty and service-error views. Route and state captures include this page on phone, tablet and desktop.
+
+The 2026-09-13 readability pass uses the already-loaded Geist font, larger supporting labels and word-level wrapping for ordinary copy. Long source hashes, Work IDs and reviewer names still wrap safely. The Command Centre source panel no longer stretches to the neighbouring analysis rail, and its aggregate caption explains that report-row totals are not unique projects.
 
 The existing application uses wrapping navigation, fluid filter columns, mobile candidate cards, responsive metric grids and wrapping evidence values. Desktop sidebars scroll when the available height is short. Buttons and primary action links have a minimum 44-pixel height.
 
@@ -27,7 +33,7 @@ The reproducible Playwright suite checks Chromium, Firefox and WebKit at these C
 | Desktop | 1440 x 900 |
 | Large desktop | 1920 x 1080 |
 
-Every size covers sign-in, the populated queue, candidate evidence, a saved review and the Command Centre. Phone, tablet and desktop also cover invalid sign-in; empty and filtered queues; export pending, failure and success; failed review; missing and unavailable candidates; queue and Command Centre service failure/recovery; empty sources; both route loading states; second-page results; verification requested, resolved, reopened and dismissed review states.
+Every size covers sign-in, the populated queue, candidate evidence, a saved review, the Command Centre and Data Quality. Phone, tablet and desktop also cover invalid sign-in; empty and filtered queues; export pending, failure and success; failed review; missing and unavailable candidates; queue and Data Quality service failure/recovery; empty sources; both route loading states; second-page results; verification requested, resolved, reopened and dismissed review states.
 
 A 640 x 450 case checks keyboard entry through the skip link, reduced-motion preference and long unbroken synthetic evidence. It approximates the CSS width available when zooming a 1280-pixel screen to 200%. It does not certify native browser zoom or physical mobile devices.
 

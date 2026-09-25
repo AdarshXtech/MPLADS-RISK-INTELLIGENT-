@@ -15,7 +15,7 @@ ENGINE_VERSION = "3"
 SANCTIONED_REPORT = "Works Sanctioned.csv"
 PEER_MINIMUM = 20
 PEER_MEDIAN_MULTIPLIER = Decimal(2)
-LOCALITY_SPATIAL_RADIUS_METRES = Decimal("500")
+LOCALITY_SPATIAL_RADIUS_METRES = Decimal(500)
 DESCRIPTION_SIMILARITY_THRESHOLD = Decimal("0.60")
 DESCRIPTION_MIN_SHARED_TOKENS = 3
 MAX_DESCRIPTION_TOKEN_BUCKET = 250
@@ -190,7 +190,12 @@ def _description_similarity(left, right):
 
 
 def _distance_metres(left, right):
-    if None in {left["latitude"], left["longitude"], right["latitude"], right["longitude"]}:
+    if None in {
+        left["latitude"],
+        left["longitude"],
+        right["latitude"],
+        right["longitude"],
+    }:
         return None
     lat1, lon1, lat2, lon2 = map(
         radians,
@@ -202,7 +207,10 @@ def _distance_metres(left, right):
         ),
     )
     latitude_delta, longitude_delta = lat2 - lat1, lon2 - lon1
-    haversine = sin(latitude_delta / 2) ** 2 + cos(lat1) * cos(lat2) * sin(longitude_delta / 2) ** 2
+    haversine = (
+        sin(latitude_delta / 2) ** 2
+        + cos(lat1) * cos(lat2) * sin(longitude_delta / 2) ** 2
+    )
     return Decimal(str(2 * 6_371_000 * asin(sqrt(haversine)))).quantize(Decimal("0.01"))
 
 
@@ -216,7 +224,11 @@ def _locality_evidence(left, right):
     matched = {}
     for field in ("ward_village", "block_tehsil", "district", "state"):
         left_value, right_value = left.get(field), right.get(field)
-        if left_value and right_value and normalise_text(left_value) == normalise_text(right_value):
+        if (
+            left_value
+            and right_value
+            and normalise_text(left_value) == normalise_text(right_value)
+        ):
             matched[field] = left_value
             return {"level": field, "label": labels[field], "matched_fields": matched}
     distance = _distance_metres(left, right)
@@ -233,14 +245,46 @@ def _locality_evidence(left, right):
 def _supporting_signals(left_record, right_record, left_location, right_location):
     left, right = left_record["cleaned"], right_record["cleaned"]
     signals = []
-    if normalise_text(left.get("IDA")) and normalise_text(left.get("IDA")) == normalise_text(right.get("IDA")):
-        signals.append({"signal": "same_authority", "label": "Same authority", "value": left["IDA"]})
-    if normalise_text(left_location.get("constituency")) and normalise_text(left_location.get("constituency")) == normalise_text(right_location.get("constituency")):
-        signals.append({"signal": "same_constituency", "label": "Same constituency", "value": left_location["constituency"]})
-    if left.get("Sanction Date") and left.get("Sanction Date") == right.get("Sanction Date"):
-        signals.append({"signal": "same_sanction_date", "label": "Same sanction date", "value": left["Sanction Date"]})
-    if left.get("Sanction Amount ( â‚¹ )") and left.get("Sanction Amount ( â‚¹ )") == right.get("Sanction Amount ( â‚¹ )"):
-        signals.append({"signal": "same_sanction_amount", "label": "Same sanction amount", "value": left["Sanction Amount ( â‚¹ )"]})
+    if normalise_text(left.get("IDA")) and normalise_text(
+        left.get("IDA")
+    ) == normalise_text(right.get("IDA")):
+        signals.append(
+            {
+                "signal": "same_authority",
+                "label": "Same authority",
+                "value": left["IDA"],
+            }
+        )
+    if normalise_text(left_location.get("constituency")) and normalise_text(
+        left_location.get("constituency")
+    ) == normalise_text(right_location.get("constituency")):
+        signals.append(
+            {
+                "signal": "same_constituency",
+                "label": "Same constituency",
+                "value": left_location["constituency"],
+            }
+        )
+    if left.get("Sanction Date") and left.get("Sanction Date") == right.get(
+        "Sanction Date"
+    ):
+        signals.append(
+            {
+                "signal": "same_sanction_date",
+                "label": "Same sanction date",
+                "value": left["Sanction Date"],
+            }
+        )
+    if left.get("Sanction Amount ( â‚¹ )") and left.get(
+        "Sanction Amount ( â‚¹ )"
+    ) == right.get("Sanction Amount ( â‚¹ )"):
+        signals.append(
+            {
+                "signal": "same_sanction_amount",
+                "label": "Same sanction amount",
+                "value": left["Sanction Amount ( â‚¹ )"],
+            }
+        )
     return signals
 
 
@@ -361,7 +405,9 @@ def locality_duplicate_candidates(records, locations=None):
     # Compare within locality buckets first, then only pairs sharing enough
     # non-generic description tokens. This avoids an all-records pairwise scan.
     locality_buckets = defaultdict(list)
-    contexts = {_record_key(record): _location_context(record, locations) for record in records}
+    contexts = {
+        _record_key(record): _location_context(record, locations) for record in records
+    }
     for record in records:
         work_type = normalise_text(record["derived"].get("work_type"))
         if not work_type:
@@ -381,7 +427,9 @@ def locality_duplicate_candidates(records, locations=None):
             if len(grouped) > MAX_DESCRIPTION_TOKEN_BUCKET:
                 continue
             for left_record, right_record in combinations(grouped, 2):
-                left_key, right_key = sorted((_record_key(left_record), _record_key(right_record)))
+                left_key, right_key = sorted(
+                    (_record_key(left_record), _record_key(right_record))
+                )
                 candidate_tokens[(left_key, right_key)].add(
                     normalise_text(left_record["cleaned"].get("Work description"))
                 )
@@ -394,10 +442,15 @@ def locality_duplicate_candidates(records, locations=None):
         context = contexts[key]
         if context["latitude"] is None or context["longitude"] is None:
             continue
-        cell = (int(float(context["latitude"]) / 0.005), int(float(context["longitude"]) / 0.005))
+        cell = (
+            int(float(context["latitude"]) / 0.005),
+            int(float(context["longitude"]) / 0.005),
+        )
         for latitude_offset in range(-2, 3):
             for longitude_offset in range(-2, 3):
-                for other_key in spatial_grid[(cell[0] + latitude_offset, cell[1] + longitude_offset)]:
+                for other_key in spatial_grid[
+                    (cell[0] + latitude_offset, cell[1] + longitude_offset)
+                ]:
                     other = record_by_key[other_key]
                     if (
                         normalise_text(record["derived"].get("work_type"))
@@ -460,12 +513,19 @@ def locality_duplicate_candidates(records, locations=None):
             "locality_evidence": locality,
             "location_summary": {
                 "statuses": statuses,
-                "coordinate_availability": "available" if coordinate_available else "unavailable",
+                "coordinate_availability": "available"
+                if coordinate_available
+                else "unavailable",
             },
             "spatial_evidence": {
                 "distance_metres": str(distance) if distance is not None else None,
-                "distance_kilometres": str((distance / Decimal(1000)).quantize(Decimal("0.001"))) if distance is not None else None,
-                "within_configured_radius": distance is not None and distance <= LOCALITY_SPATIAL_RADIUS_METRES,
+                "distance_kilometres": str(
+                    (distance / Decimal(1000)).quantize(Decimal("0.001"))
+                )
+                if distance is not None
+                else None,
+                "within_configured_radius": distance is not None
+                and distance <= LOCALITY_SPATIAL_RADIUS_METRES,
                 "configured_radius_metres": str(LOCALITY_SPATIAL_RADIUS_METRES),
                 "configuration_status": "prototype configuration requiring policy validation",
             },

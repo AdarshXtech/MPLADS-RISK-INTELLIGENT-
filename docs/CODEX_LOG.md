@@ -4,7 +4,11 @@
 
 - **Task:** Publish the staged UI, reviewed-location backend, assets, tests and documentation to the user-confirmed `AdarshXtech/MPLADS-RISK-INTELLIGENT-` repository.
 - **Credential check:** Removed local reviewer credentials from the tracked example before committing. The local frontend environment file and runtime logs remain ignored.
-- **Verification:** Prior UI verification passed 66 browser checks and 15 final map checks. Attempted a backend rerun during publication, but `uv` is unavailable on this shell's PATH. The remote has advanced since the local base; its changes must be incorporated before a normal push.
+- **Integration:** Fetched 14 newer commits through `5b3f967` and merged the shared dashboard, dedicated Data Quality route, pending-work navigation, Cloudflare/Render configuration, login diagnostics and API timeout handling. Kept Suchak AI branding, map details, locality filters and the full-width source matrix. Reconciled the lock with npm and narrowed a pre-existing source-count test to its source section. No forced history update is used.
+- **Backend integration:** Added reviewed locations to the existing idempotent database initialiser, with a focused table-order test and extended PostgreSQL table assertion. Applied Ruff formatting to the existing locality changes and corrected three lint findings without changing detection thresholds. Existing deployments need to run the initialiser before the new candidate query; no database was changed during publication.
+- **Verification:** Prior UI verification passed 66 browser checks and 15 final map checks. `uv` is unavailable on this shell's PATH, so tests and Ruff were run through the existing uv-managed Python 3.12 virtual environment directly. Backend results: 49 passed, 14 skipped because the dedicated PostgreSQL test URL is absent. Ruff lint/format and frontend ESLint pass. The merged production build passes. The combined browser run passed 63 checks; three instances of an older source-count assertion matched both the new candidate count and source count. After scoping the assertion to its source section, all nine queue checks passed across Chromium, Firefox and WebKit in the focused production rebuild. The merged Command Centre screenshot was inspected. Hosted CI and Cloudflare deployment validation remain separate from these local results.
+- **Dependency limitation:** npm audit reports three high-severity development-tool entries through `wrangler`, `miniflare` and its nested `sharp`. The remote deployment versions were preserved; no deployment or dependency security upgrade is claimed by this push.
+- **Files:** Merge resolutions in the frontend shared dashboard, shell, styles, queue/evidence components, API client, package lock and browser assertion; backend initialiser/test and locality formatting; design, deployment, flow, decisions, PRD, responsive and session documentation. The remote's `.env.example` deletion is retained; the earlier local commit contains no credential values. The local environment file remains ignored, and staged text was checked against its secret values without printing them.
 
 ## 2026-09-25: Suchak AI branding, additional Command Centre reference and India pair comparison
 
@@ -27,6 +31,151 @@
 - **Verification:** ESLint passed after the final edits. Playwright's production build passed. All 51 browser tests passed across Chromium, Firefox and WebKit, covering eight widths from 320 to 1920 pixels, long-value reflow, keyboard access, filters, pagination, CSV, source evidence, review transitions and unavailable/empty/loading states. After screenshot review prompted the distance-display correction, rebuilt and reran the six focused UI tests across all three browsers; all passed, including zero/missing distance, pending-save prevention and responsive rail placement. The normal route tests recorded no browser page errors. Visually inspected desktop evidence, Command Centre and sign-in, plus phone sign-in/queue and tablet evidence. Initial browser execution was blocked by sandbox subprocess restrictions and then missing browser binaries; installed the required Playwright browsers and completed the tests outside the sandbox.
 - **Preview:** Started the Next.js development server at `http://127.0.0.1:3000/login`. The sign-in route returned HTTP 200 with the new password control; the development error log was empty.
 - **Limitations:** Browser checks use labelled synthetic fixtures and do not certify native 200% zoom, physical devices or every WCAG criterion. Backend tests were not rerun because this session changes presentation and browser tests, not backend logic. No reviewer environment variables or local environment file are configured in this workspace, so live sign-in/data review requires the existing credentials and backend setup. No official review event was written, and no commit, push or deployment was performed.
+
+## 2026-09-17: Fix cross-browser frontend CI assertion
+
+- **Task:** Diagnose and fix the failed frontend CI run for commit `530e31e`.
+- **Cause:** WebKit serialised the computed `0.8rem` font size with a small floating-point difference, so Playwright's exact string comparison against `12.8px` failed even though the rendered size was correct.
+- **Files modified:** `frontend/e2e/investigation-queue.spec.ts`, `docs/CODEX_LOG.md`.
+- **Fix:** Parse the browser-computed font size as a number and compare it with one decimal digit of tolerance. The UI requirement and CSS remain unchanged.
+- **Evidence:** GitHub Actions run `34828273352` showed Backend success and Frontend failure in the production browser-test step. The same focused patch passed both jobs in run `34879506082` on PR #1. Locally, ESLint passed and the affected production-build browser test passed in Chromium, Firefox and WebKit. `git diff --check` reported no whitespace errors.
+
+## 2026-09-14: Command Centre review hierarchy and readability
+
+- **Task:** Correct one-source wording, remove the repeated reviewer ID, name the queue action for pending review, enlarge provenance and validation-chart notes, and raise pending work on Command Centre.
+- **Files created:** None.
+- **Files modified:** `frontend/app/command-centre/dashboard.tsx`, `frontend/app/investigation-queue/shell.tsx`, `frontend/app/globals.css`, `frontend/e2e/investigation-queue.spec.ts`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+- **Implementation:** Reused the existing summary and `NEW` queue filter; placed the workload panel directly after the page heading and made pending review its first count. One-source summary copy now uses the singular. The reviewer ID remains in the utility bar only. Provenance and chart notes use 0.8 rem text.
+- **Verification:** ESLint, `git diff --check` and the production-build Chromium review-flow test passed. Five focused Chromium browser tests passed across 320, 768, 1024 and 1440 px widths. Two additional screenshot-capture tests passed at 320 and 1440 px; both Command Centre images were visually inspected with synthetic test data. The browser test checks singular wording, one visible reviewer ID, section order, the `NEW` queue filter and computed 12.8 px provenance/chart-note text. No official data, detector, database or deployment state changed.
+- **Known limitation:** This run did not recheck Firefox or WebKit. Screenshots are synthetic UI fixtures and do not verify production data.
+
+## 2026-09-14: Exploratory near-duplicate comparison
+
+- **Task:** Compare sanctioned works beyond exact description matching while avoiding an unsupported fraud probability.
+- **Files created:** `backend/src/backend/near_duplicate.py`, `backend/tests/test_near_duplicate.py`.
+- **Files modified:** `docs/detection-rules.md`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+- **Decision:** Keep the current reviewable detector unchanged. Use a read-only deterministic description similarity score, with exact administrative/date/amount blocking and numeric/phase mismatch exclusions. SHA-256 remains provenance only. No trained classifier or fraud rating is claimed.
+- **Tests and calibration:** Four synthetic near-duplicate tests passed; Ruff lint and format checks passed; the non-database backend suite passed 43 tests with 13 database-dependent skips. The official 16,000-row sanctioned-work calibration returned 4,881 initial pairs and 2,824 after numeric/phase exclusions. A full test run with the configured database connection reported failures and stalled, so it was interrupted; database integration is not verified in this session.
+- **Known limitations:** The 2,824 pairs are unvalidated text-similarity candidates, not official findings. No model accuracy or false-positive rate can be measured without reviewed labels. No new detector results were staged or shown on the site.
+- **Manual review:** Sample and label candidate pairs, especially repetitive templates, before setting a review threshold or enabling the model. No database, deployment or Git push was performed.
+
+## 2026-09-13: Separate Data Quality navigation from Command Centre
+
+- **Task:** Fix the Data Quality sidebar link opening Command Centre instead of a distinct page.
+- **Files created:** `frontend/app/command-centre/dashboard.tsx` (shared rendering extracted from the former route file), `frontend/app/data-quality/page.tsx`, `frontend/app/data-quality/loading.tsx`.
+- **Files modified:** `frontend/app/command-centre/page.tsx`, `frontend/app/investigation-queue/shell.tsx`, `frontend/e2e/investigation-queue.spec.ts`, `frontend/e2e/responsiveness.spec.ts`, `docs/PRD.md`, `docs/architecture.md`, `docs/responsive-ui.md`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+- **Decision:** Use a real authenticated route with its own title, loading and error states; reuse the existing source-data view rather than duplicating data logic. Data Quality does not request investigation summary counts.
+- **Tests:** ESLint passed; the production Next.js build ran through Playwright; all 45 Investigation Queue and responsive tests passed across Chromium, Firefox and WebKit. A separate two-scenario Chromium capture run passed and the Data Quality phone and desktop screenshots were inspected.
+- **Limitations:** Source-data sections remain visible on Command Centre too. No backend, database, detector or deployment setting changed.
+- **Manual review:** Verify the new route on the connected staging deployment after the code is pushed. No push or deployment was performed in this session.
+
+## 2026-09-13: Reviewer interface readability and spacing
+
+- **Task:** Improve character rendering, text placement, spacing and comprehension on the implemented Command Centre, Investigation Queue and candidate evidence routes.
+- **Files created:** None.
+- **Files modified:** `frontend/app/globals.css`, `frontend/app/command-centre/page.tsx`, `frontend/app/investigation-queue/page.tsx`, `frontend/app/investigation-queue/[id]/page.tsx`, `frontend/e2e/investigation-queue.spec.ts`, `docs/responsive-ui.md`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+- **Implementation decisions:** Reuse the loaded Geist font and existing CSS. Increase small supporting type, limit character-level wrapping to identifiers and long evidence values, remove the stretched Data Quality panel, tighten mobile candidate-card spacing and clarify that aggregate counts are report rows rather than unique projects. No detector, authentication, API or database logic changed.
+- **Tests executed and results:** ESLint passed; focused Chromium phone/desktop responsive scenarios passed; all 45 Investigation Queue and responsive Playwright tests passed across Chromium, Firefox and WebKit.
+- **Known limitations:** Browser screenshots use synthetic fixtures and do not verify every variation of official field content. This is a readability pass, not a new WCAG certification.
+- **Manual review:** Check the deployed Vercel build after pushing to the connected production branch. No deployment or Git push was performed in this session.
+
+## 2026-09-10: Diagnose deployed login, data and navigation failures
+
+- **Task:** Check the reported login failure, empty website data and non-working navigation on the deployed Vercel frontend and Render backend.
+- **Files modified:** `frontend/app/command-centre/page.tsx`, `frontend/e2e/responsiveness.spec.ts`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+- **Implementation:** Kept the existing architecture, made the Data Quality sidebar link target the rendered empty or service-error panel when the normal source panel is unavailable, and made Retry connection force a fresh server request after fragment navigation.
+- **External verification:** The Vercel login page responded and rejected a synthetic invalid account as incorrect credentials, confirming that the deployed username and password bindings are present. Render `/health` returned healthy. Render `/data-overview` returned zero source batches and zero records.
+- **Tests executed:** `npm run lint` passed. The targeted production-build Playwright responsive-state test passed in Chromium, Firefox and WebKit. The first Chromium run exposed a fragment-navigation retry defect; the retry URL was corrected and the test then passed in all three engines.
+- **Known limitations:** The correct reviewer credential values and presence of the session-signing secret cannot be derived from the website. The deployed Neon database remains empty and cannot show source or detector data.
+- **Manual setup:** Reset the chosen Vercel reviewer credentials if they are unknown, verify the session secret and matching frontend/backend API key, redeploy, then load the six official CSV exports and run the reviewable detector against the Neon database through an authorised connection.
+
+## 2026-09-10: Synchronise latest remote main changes into master
+
+- **Task:** Fetched the latest remote history and merged the two newer `origin/main` commits into the local `master` branch without force-pushing or discarding either branch's work.
+- **Changes received:** Imported the bounded Cloudflare reviewer-login diagnostics, its Worker regression script, and the MPLADS problem research and SIH pitch-preparation documents.
+- **Conflict resolution:** `docs/CODEX_LOG.md` was the only merge conflict. Both the existing deployment/PDF history and the incoming Cloudflare diagnostic history were preserved.
+- **Verification:** Restored locked frontend dependencies with `npm ci`; ESLint passed; the Next.js 16 production build completed and generated `/`, `/login`, `/command-centre`, `/investigation-queue`, the candidate route and export route. npm reported four high-severity audit findings in transitive dependencies; no automatic or forced audit fix was applied.
+- **Repository state:** The synchronisation is committed locally on `master`. It has not been pushed during this task.
+
+## 2026-09-09: Verify deployed backend and Neon database path
+
+- **Task:** Continued deployment verification after the user confirmed that the backend and database were deployed, and updated the jury playbook with the observed status.
+- **Verification:** The Render API root and `/health` returned HTTP 200. PostgreSQL-backed `/data-overview` returned HTTP 200. Protected `/investigation-summary` returned HTTP 401 without the review key, as expected. No state-changing endpoint was called and no credential was exposed.
+- **Data state:** The deployed data overview returned zero source batches and zero retained records. This verifies the deployed infrastructure path, not completion of official ingestion or availability of the 174 local candidate groups in Neon.
+- **Documentation:** Updated `docs/deployment.md` to distinguish the deployed Render backend and Neon PostgreSQL database from the still-unverified frontend and data staging state.
+- **PDF:** Appended a visually verified deployment-status page to `output/pdf/mplads-jury-question-answer-playbook.pdf`. The document now has 23 non-empty pages and gives the jury-safe deployment answer plus the next verification gate.
+
+## 2026-09-09: Create MPLADS jury question-and-answer playbook
+
+- **Task:** Created an evidence-first jury preparation PDF that answers 18 difficult evaluation questions in several usable forms: a 10-second answer, a 30-second answer, proof to demonstrate, a follow-up response and claims to avoid.
+- **Output:** `output/pdf/mplads-jury-question-answer-playbook.pdf`, a separate 22-page A4 document with a project truth sheet, answer strategy, all requested questions and a five-minute demonstration path.
+- **Project accuracy:** Answers use the implemented scope only: six staged CSV report types, 141,717 retained records, 16,000 sanctioned rows screened, 174 potential-duplicate candidate groups, the seven-field deterministic rule, five PostgreSQL tables, FastAPI, Next.js and the append-only review workflow. The document explicitly identifies composite scoring, labelled model accuracy, offline review synchronisation, production identity and automatic government feeds as unimplemented.
+- **Responsible presentation:** Replaced generic claims about offline-first behaviour, local-language support, connectivity, ministry processes, funding and model accuracy with project-specific answers and clear evidence boundaries. The team-role answer contains marked name placeholders that must be replaced by the presenters because team ownership details were not available.
+- **Verification:** Reopened the final PDF with pypdf, confirmed 22 non-empty pages and all requested headings and project figures, checked for em dashes, non-breaking hyphens and prohibited confirmation wording, rendered all pages with Poppler and visually inspected every page. The cover screenshot remains visibly labelled as synthetic QA data and is captioned accordingly.
+
+## 2026-09-09: Create illustrated project-working PDF
+
+- **Task:** Created a new screenshot-led PDF explaining what the MPLADS Risk Intelligence project is, how its code and data pipeline work, and how an authorised official reviews a candidate.
+- **Output:** `output/pdf/mplads-project-working-illustrated.pdf`, a separate twelve-page A4 guide covering users, CSV ingestion, provenance, PostgreSQL tables, the deterministic detector, detector support boundaries, Next.js and FastAPI request flow, sign-in, Command Centre, Investigation Queue, evidence and append-only review outcomes.
+- **Data integrity and safety:** Used documented implementation facts only: six staged CSV report types, 141,717 retained records, 16,000 sanctioned rows screened, 174 potential-duplicate groups and seven matched fields. The PDF states that candidates require verification, confidence is not probability of misuse, no composite severity score exists, unsupported detectors remain disabled and generative AI cannot create or change risk flags.
+- **Screenshots:** Reused five Chromium captures from the verified responsive QA suite. Each image retains the visible synthetic-test-data label and has an additional caption stating that screenshot values are synthetic QA fixtures, not official MPLADS observations.
+- **Verification:** Reopened the final PDF with pypdf, confirmed twelve non-empty pages and all required project terms, checked for prohibited fraud-confirmation wording and em dashes, rendered all pages with Poppler and visually inspected every page. Reduced the final screenshot crop after the first render exposed a one-page overflow, then confirmed the corrected twelve-page layout.
+
+## 2026-09-09: Create authorised-user guide PDF
+
+- **Task:** Created and then revised a plain-language PDF for authorised officials to explain the working website through verified browser screenshots and describe the current detection model.
+- **Output:** `output/pdf/mplads-authorised-user-guide.pdf`, an ignored nine-page A4 illustrated guide covering sign-in, Command Centre, queue controls, evidence verification, the review form and saved state, the deterministic seven-field rule, model limitations and responsible wording.
+- **Data integrity and safety:** Used only implemented behaviour and repository-verified measurements. The guide states that the 174 groups are verification candidates, confidence represents certainty of the configured match condition, no composite risk score exists, and generative AI cannot create or change flags.
+- **Implementation:** Reused the existing ReportLab PDF styling and five browser captures from the responsive QA suite. Every screenshot retains its visible synthetic-test-data strip and receives an additional explanatory caption. No application dependency, source data, detector result, API or database record changed.
+- **Verification:** Reopened the PDF with pypdf, confirmed nine non-empty pages and required user/model sections, checked prohibited wording and em dashes, rendered every page with Poppler and visually inspected all pages for clipping, overlap and legibility. Adjusted the review-form crop until it showed a complete form and Save action without a partial preceding section.
+
+## 2026-09-09: Reproduce Cloudflare login failure and add safe diagnostics
+
+- **Task:** Investigated repeated reviewer-configuration errors after the user reported configuring all frontend runtime variables.
+- **Evidence:** A Playwright request to the supplied `mplads-risk-intelligent.fockss.workers.dev` login with deliberately invalid synthetic credentials redirected to `error=configuration` without a session. The unchanged checkout built with OpenNext and successfully created a session in local workerd with generated synthetic credentials. Database authentication is not part of this login path. The exact deployed binding state and exception are still unknown.
+- **Files created:** `frontend/e2e/cloudflare-auth.mjs`.
+- **Files modified:** `frontend/lib/auth.ts`, `frontend/app/login/actions.ts`, `frontend/package.json`, `frontend/eslint.config.mjs`, `docs/cloudflare-render-deployment.md`, `docs/decisions.md`, `docs/flow.md`, this log.
+- **Implementation:** Added a bounded server diagnostic with failed stage, error category and three binding-presence booleans. Kept authentication, error-page copy and cookie behaviour unchanged. Added a local Worker browser test command and excluded generated Cloudflare bundles from lint.
+- **Tests:** The new Worker regression test first failed because missing configuration emitted no server diagnostic. After the patch, `npm run test:auth:worker` passed all four scenarios: correct/incorrect credentials with complete configuration, missing username, missing password and missing session secret. Assertions verify session presence, HTTP-only/SameSite flags and absence of secret values in logs. Tests used installed Edge through Playwright (`MPLADS_E2E_BROWSER_CHANNEL=msedge`) because bundled Chromium was unavailable. OpenNext production compilation and TypeScript checks passed.
+- **Additional verification:** Frontend ESLint passed after excluding generated Cloudflare output. `git diff --check` passed. Temporary probe scripts and generated credential files were removed; the reusable regression test remains. No frontend layout or controls changed, so the browser checks were limited to the affected login flow.
+- **Environment limitations:** The Playwright MCP is restricted to localhost and rejected the deployed URL; an explicitly approved local Playwright process performed the synthetic live check. The first rebuild encountered a Windows output-directory lock from the running preview; stopping that preview allowed the build to pass. OpenNext warns about limited Windows support. Browser extension console warnings did not identify the server-side failure.
+- **Manual review and unresolved issue:** Deploy the diagnostic patch, reproduce one failed sign-in and inspect the `[mplads-auth]` event in the correct Cloudflare Worker's runtime logs. The patch is diagnostic; hosted authentication is not claimed fixed. No production credentials or database records were used. The user subsequently authorised committing and pushing the patch; the current local branch tracks `origin/main`. Cloudflare must build that branch to receive the diagnostics.
+
+## 2026-09-09: Repair deployment CI formatting and database initialisation test
+
+- **Task:** Corrected the actual failure in GitHub run `34337368880` after confirming that the earlier frontend `npm ci` failure was already resolved.
+- **Files modified:** `backend/src/backend/init_db.py`, `backend/tests/test_init_db.py`, and this log.
+- **Implementation:** Ruff formatted the database initialisation error message. The PostgreSQL test now gives every `init_db()` connection the same isolated schema through a libpq `search_path` option, verifies idempotent table creation there and removes that temporary schema afterwards. Production database initialisation behaviour is unchanged.
+- **Verification:** Ruff formatting and lint passed. The focused database initialisation tests passed, and the full PostgreSQL-backed backend suite passed with 52 tests. The latest hosted run already confirmed that frontend dependency installation, lint and browser tests pass. A new hosted run is required after this local fix is pushed.
+- **Limitations:** No push or deployment was performed. The local branch contains the verified fix and documentation only.
+
+## 2026-09-09: Update the plain-language system explainer PDF
+
+- **Task:** Updated the existing PDF to explain the implemented MPLADS system and the authorised-official workflow in simple language.
+- **Output:** `output/pdf/mplads-risk-intelligence-explained.pdf`, an ignored nine-page A4 document covering purpose, users, new-data ingestion, the seven-field duplicate-candidate rule, the website review workflow, case states, code flow, current capability and production limitations.
+- **Data integrity:** Used only repository-verified figures and behaviour: six staged CSV report types, 141,717 retained source records, 16,000 sanctioned rows screened and 174 potential-duplicate candidate groups. The document states that candidates require verification and do not prove duplication, misuse or fraud.
+- **Implementation:** Reused the existing output path and generated the PDF with the already available ReportLab runtime. No application dependency, API, database record, detector result or source file changed.
+- **Verification:** Reopened the output with pypdf, confirmed nine non-empty pages and required workflow text, checked for prohibited em dashes, rendered all pages with Poppler and visually inspected them. The first render exposed invisible dark-band labels; these were corrected and the affected pages were rendered and inspected again.
+- **Known limitations:** The PDF describes the current local reviewer login as demonstration-only and clearly marks production government identity, approved automatic data delivery, composite risk scoring and unsupported detectors as unimplemented.
+
+## 2026-09-09: Configure Cloudflare and Render hybrid staging deployment
+
+- **Task:** Configure deployment to Cloudflare for the Next.js frontend and Render for the FastAPI backend and managed PostgreSQL database.
+- **Created:** `render.yaml`, `backend/src/backend/init_db.py`, `backend/tests/test_init_db.py`, `frontend/wrangler.jsonc`, `frontend/open-next.config.ts`, `docs/cloudflare-render-deployment.md`.
+- **Modified:** `frontend/lib/investigations.ts`, `frontend/app/command-centre/page.tsx`, `frontend/package.json`, `frontend/package-lock.json`, `frontend/.gitignore`, `docs/deployment.md`, `docs/decisions.md`, `docs/flow.md`, and this log.
+- **Implementation:**
+  - Added `render.yaml` Blueprint defining the `mplads-api` Web Service (Python 3.12, `uv sync --frozen --no-dev`, Uvicorn) and `mplads-db` PostgreSQL instance.
+  - Implemented `backend/src/backend/init_db.py` to provide idempotent, atomic creation of all five application tables and indexes.
+  - Configured `@opennextjs/cloudflare` with `wrangler.jsonc` and `open-next.config.ts` for Cloudflare Workers/Pages SSR edge deployment with `nodejs_compat`.
+  - Added `resolveApiBaseUrl()` for URL sanitisation and `apiTimeoutMs()` (default 45s) to handle Render free-tier cold starts gracefully.
+  - Added comprehensive step-by-step documentation in `docs/cloudflare-render-deployment.md`.
+- **Verification:**
+  - `uv run --frozen ruff check src tests` passed with 0 errors.
+  - `uv run --frozen pytest -q` passed with 39 passed, 13 skipped (test DB opt-in).
+  - `npm run lint` passed with 0 errors.
+  - `npm run build` completed successfully.
+  - `npm run build:worker` (`opennextjs-cloudflare build`) successfully built the Cloudflare worker bundle saved in `.open-next/worker.js`.
+- **Limitations:** Staging deployment requires pushing to Git and linking to Cloudflare and Render dashboards as detailed in the operational guide. Official data must be staged from an authorised workstation over TLS; no official data was baked into images or committed to Git.
 
 ## 2026-09-08: Investigate frontend CI installation failure
 
@@ -284,3 +433,34 @@
 - **Known limitations:** Field meanings, datatypes, null rates, unique values, examples, anomaly usefulness and quality concerns cannot be measured without the source dataset.
 - **Manual review required:** Place the unchanged MPLADS source dataset in `data/raw/` and rerun Phase 2.
 - **Unresolved issues:** `docs/data-dictionary.md`, `docs/detection-rules.md`, the ingestion pipeline, cleaned output and automated ingestion tests remain blocked by the missing source dataset.
+
+## 2026-09-10: Supplied SIH PDF template reconstruction
+
+- **Task:** Correct the presentation to follow the user's supplied six-page PDF instead of the earlier generic design.
+- **Source:** `SIH26102_MPLADS_Risk_Intelligence_Official_Template_Edited.pdf` in Downloads. Original remains unchanged.
+- **Files created:** Local `output/presentations/Innospark-SIH26102-template-matched-v3.pptx` and private extraction, build and preview files under `.tmp/sih-pitch/`.
+- **Files modified:** `docs/research/sih26102-presentation-notes.md` and `docs/CODEX_LOG.md`.
+- **Decisions:** Retain the actual SIH branding, Innospark badge, font families, source layout and slide order. Reconstruct shapes and text natively from the PDF, reuse original logos and create an editable risk-response table. Label unimplemented AI scoring and detector extensions as proposed.
+- **Verification:** Inspected all six source and final slide renders. Package integrity, six-slide count, source-derived Arial/Calibri/Cambria font policy, geometry, native table and re-import checks passed. Application tests were not applicable.
+- **Limitations:** PDF reconstruction does not preserve an unavailable original PPTX master. Minor shadow, curve and text-wrap differences remain. The source Team ID is missing. Desktop PowerPoint verification was not performed.
+- **Manual review:** Add the confirmed Team ID and verify in PowerPoint before submission. No source data, application code, deployment or Git remote changed.
+
+## 2026-09-10: SIH presentation draft
+
+- **Task:** Create the requested six-slide hackathon deck using project evidence and a past SIH presentation reference.
+- **Files created:** Local `output/presentations/mplads-sih26102-pitch-draft-v5.pptx`, `docs/research/sih26102-presentation-notes.md` and private build files under `.tmp/sih-pitch/`.
+- **Files modified:** `docs/CODEX_LOG.md`. No application source, dependency manifest or execution flow changed.
+- **Decisions:** Use editable text, a native process diagram and a native risk-response table. Keep documented counts distinct from unvalidated benefits. Caption the browser screenshot as synthetic. Study the team-published Ourobonics SIH 2025 deck for structure without copying unrelated claims or assets.
+- **Verification:** Six final rendered slides visually inspected. Package, slide count, geometry, font policy, native table and re-import checks passed. Application tests were not applicable. No desktop PowerPoint verification or new detector run was performed.
+- **Limitations:** The old OneDrive PPT remains inaccessible and no matching local deck was found. Its content and team details could not be incorporated. The matching bundled presentation runtime was used because the named dependency-loading tool was unavailable.
+- **Manual review:** Upload the old PPTX, reconcile its content, add confirmed team identifiers and check current SIH submission rules. The generated PPTX is local and ignored by existing Git rules. No push or deployment was performed.
+
+## 2026-09-10: SIH problem and solution research
+
+- **Task:** Research the MPLADS problem, explain the proposed solution and current implementation, and prepare SIH pitch and judge questions for GitHub publication.
+- **Files created:** `docs/research/sih26102-problem-solution-research.md`, `docs/research/sih26102-pitch-and-judge-preparation.md`.
+- **Files modified:** `docs/CODEX_LOG.md`.
+- **Decisions:** Publish only the two research artifacts with portable repository links. Distinguish official scheme sources, provisional SIH wording, documented snapshot measurements and proposed capabilities. Application architecture and execution flow are unchanged.
+- **Verification:** Checked local document links and numbered source-note references; checked the staged diff for whitespace errors. No application code changed, so runtime tests were not required.
+- **Limitations:** Official SIH wording and the complete operative guideline/amendment set remain unverified. Counts are existing documented snapshot measurements, not a new production run. No detector accuracy or financial saving is claimed.
+- **Manual review:** Authenticate the competition statement and validate proposed detectors and rules with departmental reviewers.

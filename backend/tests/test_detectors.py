@@ -77,7 +77,11 @@ def locality(number, **overrides):
 
 def locations_for(*records, overrides=None):
     return {
-        (item["source_sha256"], item["parser_version"], item["record_number"]): locality(
+        (
+            item["source_sha256"],
+            item["parser_version"],
+            item["record_number"],
+        ): locality(
             item["record_number"], **(overrides or {}).get(item["record_number"], {})
         )
         for item in records
@@ -87,7 +91,9 @@ def locations_for(*records, overrides=None):
 def test_same_locality_with_matching_evidence_creates_candidate():
     left = record(1, description="Synthetic pathway upgrade at ward four")
     right = record(2, description="Synthetic pathway upgrade near ward four")
-    candidates = locality_duplicate_candidates([left, right], locations_for(left, right))
+    candidates = locality_duplicate_candidates(
+        [left, right], locations_for(left, right)
+    )
     assert len(candidates) == 1
     candidate = candidates[0]
     assert candidate["detector_id"] == "locality_duplicate_candidate"
@@ -102,8 +108,16 @@ def test_nearby_records_need_description_and_supporting_evidence():
         left,
         right,
         overrides={
-            1: {"location_status": "VERIFIED_COORDINATES", "latitude": 20.0000, "longitude": 78.0000},
-            2: {"location_status": "VERIFIED_COORDINATES", "latitude": 20.0001, "longitude": 78.0001},
+            1: {
+                "location_status": "VERIFIED_COORDINATES",
+                "latitude": 20.0000,
+                "longitude": 78.0000,
+            },
+            2: {
+                "location_status": "VERIFIED_COORDINATES",
+                "latitude": 20.0001,
+                "longitude": 78.0001,
+            },
         },
     )
     assert locality_duplicate_candidates([left, right], locations) == []
@@ -112,7 +126,9 @@ def test_nearby_records_need_description_and_supporting_evidence():
 def test_administrative_fallback_is_explicit_when_coordinates_absent():
     left = record(1, description="Synthetic pathway upgrade at ward four")
     right = record(2, description="Synthetic pathway upgrade near ward four")
-    candidate = locality_duplicate_candidates([left, right], locations_for(left, right))[0]
+    candidate = locality_duplicate_candidates(
+        [left, right], locations_for(left, right)
+    )[0]
     assert candidate["evidence"]["spatial_evidence"]["distance_metres"] is None
     assert any("not sufficiently verified" in item for item in candidate["limitations"])
 
@@ -121,7 +137,9 @@ def test_locality_detector_excludes_unrelated_work_types():
     left = record(1, description="Synthetic pathway upgrade at ward four")
     right = record(2, description="Synthetic pathway upgrade near ward four")
     right["derived"]["work_type"] = "Different synthetic work type"
-    assert locality_duplicate_candidates([left, right], locations_for(left, right)) == []
+    assert (
+        locality_duplicate_candidates([left, right], locations_for(left, right)) == []
+    )
 
 
 def test_locality_detector_version_does_not_change_exact_v1_results():

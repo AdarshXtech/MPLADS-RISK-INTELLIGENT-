@@ -1,6 +1,18 @@
 # Deployment readiness
 
-Updated 2026-09-08. The application is suitable for local development and an access-controlled staging demonstration. It is not ready for a public or departmental production deployment.
+Updated 2026-09-09. The backend and PostgreSQL infrastructure are deployed for staging. The application is not ready for a public or departmental production deployment because the deployed database currently contains no staged source batches or detector results, and the production frontend and identity flow are not verified here.
+
+## Verified staging status
+
+Read-only external checks on 2026-09-09 established the following:
+
+- `https://mplads-risk-intelligent.onrender.com/` returned HTTP 200 with the expected FastAPI service identity.
+- `/health` returned HTTP 200 and a healthy status.
+- PostgreSQL-backed `/data-overview` returned HTTP 200, confirming that the deployed backend can execute its database request path.
+- Protected `/investigation-summary` returned HTTP 401 without `X-MPLADS-Review-Key`, which is the expected minimum-access behaviour.
+- `/data-overview` reported zero source batches and zero retained records. The Neon database infrastructure is online, but the six official ingestion batches and reviewable detector run have not yet been verified in the deployed database.
+
+No state-changing endpoint was called during verification. Do not claim that the 141,717 staged records or 174 potential-duplicate groups are live until the deployed endpoints confirm them.
 
 ## Continuous integration
 
@@ -13,20 +25,27 @@ Action dependencies are pinned to commit hashes. CI validates the repository onl
 
 ## Intended runtime shape
 
+## Evaluated staging targets
+
+A hybrid staging target is defined and partly verified:
+- **Frontend:** Next.js 16 deployed to **Cloudflare Workers / Pages** using `@opennextjs/cloudflare` with `nodejs_compat`. Configuration is in `frontend/wrangler.jsonc` and `frontend/open-next.config.ts`.
+- **Backend:** FastAPI is deployed to **Render**. The public root and health endpoints are responding.
+- **Database:** PostgreSQL is deployed on **Neon** and is reachable through the backend. The deployed database is currently empty according to `/data-overview`.
+- **Complete guide:** Refer to [docs/cloudflare-render-deployment.md](cloudflare-render-deployment.md).
+
 ```text
-HTTPS reverse proxy
--> Next.js frontend (public entry point)
--> FastAPI backend (private network only)
--> PostgreSQL (private network only, encrypted connection)
+HTTPS (Public Internet)
+-> Cloudflare Edge (Next.js SSR via OpenNext)
+-> Server-to-Server HTTPS (with X-MPLADS-Review-Key)
+-> FastAPI backend (Render Web Service)
+-> PostgreSQL (Neon, encrypted TLS)
 ```
 
-Use one instance of each application for the first staging deployment. The browser must reach only Next.js. Next.js performs server-to-server FastAPI requests, so the review API key and database connection never enter browser JavaScript. Put a maintained reverse proxy or managed ingress in front of Next.js for TLS, request limits and rate limiting. Do not use a static Next.js export because authentication, cookies, Server Actions and request-time rendering require the Node.js server.
-
-No provider-specific Dockerfile or infrastructure file is committed yet. The hosting target affects health checks, secret injection, networking, persistent database setup and build layout. Add those files only after selecting the target.
+Use one instance of each service for staging. The browser reaches only the Cloudflare-hosted Next.js frontend. Next.js performs server-to-server FastAPI requests, so the review API key and database connection never enter browser JavaScript.
 
 ## Required services and commands
 
-PostgreSQL must be provisioned before the applications. Create owner/application roles and tables using the authorised setup described in [ingestion.md](ingestion.md), then transfer and ingest official source files through an approved secure process. Raw government exports and database credentials must not be committed to Git or baked into an image.
+PostgreSQL must be provisioned before the applications. Create owner/application roles and tables using the authorised setup described in [ingestion.md](ingestion.md) or the idempotent utility `uv run python -m backend.init_db`, then transfer and ingest official source files through an approved secure process. Raw government exports and database credentials must not be committed to Git or baked into an image.
 
 Backend build and start:
 
@@ -84,12 +103,7 @@ Before production:
 4. Complete accessibility, performance and security testing on the selected infrastructure.
 5. Obtain formal approval for the dataset scope, detector wording and operational use. Potential duplicate candidates must never be presented as confirmed misuse.
 
-## Current blockers
-
-- Hosting provider, domain, region and budget are not selected.
-- The initial baseline is on `origin/master`; the default-branch choice, branch protection and team access policy remain pending.
-- Production identity and role requirements are unavailable.
-- Production PostgreSQL, backups and secure data transfer are unavailable.
-- No staging URL, TLS configuration, monitoring destination or deployment authority has been supplied.
-
-No deployment was performed in this session. Publishing would require infrastructure choices and external state changes that must be approved explicitly.
+## Current status
+- Cloudflare and Render deployment configuration is defined (`render.yaml`, `frontend/wrangler.jsonc`, `frontend/open-next.config.ts`, `docs/cloudflare-render-deployment.md`).
+- Schema initialisation utility is implemented (`backend/src/backend/init_db.py`).
+- Staging deployment can be initiated following the operational guide. Production identity, role requirements, and formal audit approvals remain required before wider access.

@@ -1,5 +1,18 @@
 # Technical decisions
 
+## 2026-09-25: Integrate Suchak AI with the advanced remote branch
+
+- **Decision:** Merge the remote master history into the Suchak AI implementation before a normal push to the user-confirmed repository.
+- **Problem:** Both histories changed the dashboard, styles, API client, dependency lock and documentation; the remote also introduced deployment support and a dedicated Data Quality route.
+- **Alternatives:** Replace the remote history, discard local features, or retain the two incompatible dashboard implementations. A merge preserves both feature sets and the existing history.
+- **Selected approach:** Keep the remote shared `ReviewerDashboard`, Data Quality navigation, pending-review ordering, API URL/timeouts and login diagnostics. Add Suchak AI review progress and full-width source comparison to that shared dashboard, retain the map and local filters, preserve readable provenance/chart labels and reconcile the npm lock through npm. Include the location table in the idempotent initialiser because the merged candidate query needs it.
+- **Library selection:** No new direct dependency for the merge; retain the existing Cloudflare tooling and the local Leaflet/Lucide additions.
+- **Trade-offs:** Existing deployments need to run the idempotent initialiser before locality queries. Location records remain absent until reviewed input is supplied. PostgreSQL integration checks need a dedicated test database.
+- **Performance:** No additional summary request; both dashboard sections use the same returned summary. The Data Quality route still skips that request.
+- **Maintainability:** One shared dashboard and one resolved lockfile. Source-count assertions explicitly target the source section. Existing local Python changes are formatted and pass Ruff.
+- **Security:** Credentials were removed from the example before the local commit; the remote's deletion of that template is retained. Local environment and runtime logs remain ignored. The inherited Cloudflare development-tool chain reports three high-severity audit entries through Wrangler, Miniflare and its nested Sharp; dependency upgrades are not part of this publication merge.
+- **Affected files:** Shared dashboard, shell, styles, API client, queue/evidence merge resolutions, frontend manifest/lock and browser test; backend initialiser/test and locality-file formatting; design, deployment, flow, decision, PRD, responsive and session records.
+
 ## 2026-09-25: Suchak AI identity and source-backed pair map
 
 - **Decision:** Apply the supplied Suchak AI logo to shared identity surfaces, adapt the fifth Stitch screen to existing summary data and add an India A/B comparison map with authenticated source detail fetching.
@@ -25,6 +38,95 @@
 - **Maintainability impact:** Shared CSS tokens and shell provide consistent screens; existing route names, field labels and API contracts remain intact.
 - **Security impact:** No reference credentials or scripts are copied. Existing signed sessions, protected server calls and append-only review actions are preserved. The header displays unavailable state when candidate loading fails.
 - **Affected files:** Shared CSS/shell, login page/password field, submission component, queue/export/evidence components, frontend manifest/lock, browser tests, design/architecture/flow/technology/responsiveness/feature/decision/session documents.
+
+## 2026-09-14: Put pending review work first on Command Centre
+
+- **Status:** Implemented.
+- **Decision:** Show the existing investigation workload immediately after the Command Centre heading, lead with the pending-review count, and link directly to the queue's `NEW` status filter. Keep the reviewer ID in the utility bar only. Use singular wording for one staged source report and increase provenance and chart-note text to 0.8 rem.
+- **Problem:** Pending work and its action were below background information; the long reviewer ID appeared twice; small evidence notes were hard to read.
+- **Alternatives considered:** Add a second summary banner, abbreviate the reviewer ID, or introduce a new queue route. Reusing the existing workload panel and status filter keeps one source of truth.
+- **Selected approach and libraries:** Reorder existing server-rendered sections and adjust CSS. No new library.
+- **Trade-offs:** The scope and interpretation notice now follow the workload panel on Command Centre. Data Quality keeps its existing order.
+- **Performance:** No new request or client processing.
+- **Maintainability:** Existing summary and queue filter contracts remain unchanged.
+- **Security:** The reviewer ID remains visible once in the authenticated top bar; no authentication behaviour changes.
+- **Affected files:** `frontend/app/command-centre/dashboard.tsx`, `frontend/app/investigation-queue/shell.tsx`, `frontend/app/globals.css`, `frontend/e2e/investigation-queue.spec.ts`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+
+## 2026-09-14: Calibrate near-duplicate text similarity without activating fraud scores
+
+- **Problem:** The user wants comparison beyond exact strings and a rating. SHA-256 is provenance, not a duplicate feature. The supplied exports lack confirmed fraud labels, asset IDs, coordinates and quantities needed for a defensible fraud probability.
+- **Decision:** Add a read-only, untrained near-duplicate comparison over sanctioned works. Require exact administrative/date/amount context, compare non-identical descriptions with a 90% `SequenceMatcher` threshold, and exclude numeric or explicit phase mismatches. Report only description similarity, not fraud likelihood. Do not stage results or change the reviewable detector run until candidates are validated.
+- **Alternatives considered:** Train a classifier on fabricated labels, expose a weighted fraud score, or enable all fuzzy pairs immediately. These would imply unsupported accuracy or overload reviewers. A new embedding service is unnecessary for the current data.
+- **Selected approach and reason:** Python standard library plus the existing validated CSV parser provides deterministic, explainable, repeatable calibration without a new dependency.
+- **Library selection and reason:** No new library. `difflib.SequenceMatcher` is in Python 3.12 standard library.
+- **Trade-offs:** Conservative exact blocking can miss true duplicates with changed amounts/dates/agencies. Text similarity can still rank legitimate template works highly; the remaining 2,824 pairs require review.
+- **Performance impact:** Local calibration scans the 16,000-row export and compares pairs only within exact-context blocks; the measured run took about 27 seconds after phase and number checks. No runtime or database cost is added to the website.
+- **Maintainability impact:** Standalone module and synthetic tests; no changes to immutable detector results or queue APIs.
+- **Security impact:** Read-only local source access. The CLI prints bounded top-pair evidence, no credentials and no database data.
+- **Affected files:** `backend/src/backend/near_duplicate.py`, `backend/tests/test_near_duplicate.py`, detection documentation, flow record and session log.
+
+## 2026-09-13: Give Data Quality its own route
+
+- **Problem:** The sidebar labelled Data Quality as a destination, but its link opened Command Centre at a fragment. Users reasonably expected a distinct Data Quality page.
+- **Decision:** Replace the fragment link with authenticated `/data-quality`, give it a distinct heading and active navigation state, and reuse the existing verified ingestion, validation, provenance and evidence-boundary view. The prior 2026-09-10 fragment decision is superseded because its navigation model caused confusion.
+- **Alternatives considered:** Rename the sidebar item to a Command Centre section or retain the fragment and adjust scrolling. Those preserve the reported mismatch between destination label and page identity.
+- **Selected approach and reason:** Reuse one server-rendered dashboard component for both routes; Data Quality requests only the overview endpoint, while Command Centre continues to request review counts.
+- **Library selection and reason:** Not applicable; Next.js file-system routing and the existing backend client are sufficient.
+- **Trade-offs:** The two routes share some source-data presentation; a later information-architecture pass may reduce repetition, but no existing dashboard information is removed now.
+- **Performance impact:** Data Quality avoids the investigation-summary request. No browser-side dataset processing or new dependency.
+- **Maintainability impact:** Shared rendering prevents two copies of validation and provenance logic.
+- **Security impact:** Both routes require the same reviewer session. No credentials, API keys or database writes change.
+- **Affected files:** `frontend/app/command-centre/dashboard.tsx`, both route pages, Data Quality loading state, shared shell, Playwright tests, and project documentation.
+
+## 2026-09-13: Improve reviewer UI readability without changing data or workflows
+
+- **Problem:** Small uppercase labels, aggressive character-level wrapping, long reviewer identifiers and a stretched source panel made the existing pages harder to read across screen sizes. The ingestion totals could also be mistaken for unique projects.
+- **Decision:** Use the already-loaded Geist font, increase supporting text sizes, wrap ordinary prose at word boundaries while allowing long identifiers to break, keep the source panel content-height, and label ingestion totals as report rows rather than unique projects. Use simple text separators in evidence and provenance summaries.
+- **Alternatives considered:** Add a component library, redesign the information architecture, change pagination, or introduce charts. None is necessary for this presentation and comprehension fix.
+- **Selected approach and reason:** Adjust existing CSS and copy in the three implemented pages. No application behaviour or data contract changes.
+- **Library selection and reason:** Not applicable. The font was already loaded through Next.js.
+- **Trade-offs:** Larger text increases page height and may wrap more often on narrow screens; existing mobile cards and overflow checks cover this.
+- **Performance impact:** No new dependency, network request or client-side processing.
+- **Maintainability impact:** Reuses established styles and keeps report-grain clarification adjacent to the totals it explains.
+- **Security impact:** None. Authentication, API keys, risk logic and database access are unchanged.
+- **Affected files:** `frontend/app/globals.css`, `frontend/app/command-centre/page.tsx`, `frontend/app/investigation-queue/page.tsx`, `frontend/app/investigation-queue/[id]/page.tsx`, `frontend/e2e/investigation-queue.spec.ts`, `docs/responsive-ui.md`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+
+## 2026-09-10: Keep Data Quality navigation valid in service-empty and error states
+
+- **Problem:** The sidebar always displayed a Data Quality link, but the `data-quality` target existed only when source data loaded successfully. With the deployed database empty or the service unavailable, the visible link changed the URL without reaching any content.
+- **Decision:** Reuse the existing empty and service-error panels as the Data Quality target in those states. Do not add a new route, client-side navigation or dependency.
+- **Alternatives considered:** Hide the link when data is unavailable, create a separate Data Quality page, or add a client component. These approaches either remove recovery information or add unnecessary scope.
+- **Selected approach and reason:** Add the existing anchor ID to each mutually exclusive state and give the retry link a query parameter so it forces a fresh server request even after fragment navigation. Verify both behaviours through the current Playwright responsive-state test.
+- **Library selection and reason:** Not applicable.
+- **Trade-offs:** In unavailable states the link reaches diagnostic information rather than a source table, because no source data is available to display.
+- **Performance impact:** None.
+- **Maintainability impact:** Two anchor attributes, one explicit retry URL and existing browser coverage keep all command-centre states consistent.
+- **Security impact:** None. No data, credential or API behaviour changes.
+- **Affected files:** `frontend/app/command-centre/page.tsx`, `frontend/e2e/responsiveness.spec.ts`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+
+## 2026-09-09: Diagnose deployed login failures without logging secrets
+
+- **Problem:** Both credential-check exceptions and session-creation exceptions redirected to the same configuration error without logging the cause. A synthetic invalid login reproduced that error on the supplied Cloudflare URL, while the same checkout successfully authenticated in local workerd with generated test bindings.
+- **Decision:** Retain the existing authentication and user-facing error behaviour. Log the failed stage, a bounded error category and availability booleans for the three login bindings. Never log entered credentials, binding values, cookies or raw exceptions.
+- **Alternatives:** Guess another environment-variable change, rewrite authentication, or log raw exceptions. These either lack evidence or could disclose secrets. The deployed runtime state is not available from browser console warnings.
+- **Library selection:** No new dependency. Reuse installed Wrangler's `unstable_dev` API, Playwright and Node.js assertions for tests of the actual OpenNext Worker bundle.
+- **Trade-offs:** This resolves missing diagnostic information, not the unverified hosted configuration problem. Wrangler's development API may require maintenance when its installed version changes. The smoke test uses Chromium or an explicitly selected compatible browser channel.
+- **Performance:** Failed sign-ins add one small server log entry. Successful sign-ins and ordinary invalid credentials add none. The optional Worker test builds once and starts four local runtime configurations sequentially.
+- **Maintainability:** Add `test:auth:worker` for successful/invalid login and each missing binding. Exclude generated `.open-next` and `.wrangler` output from ESLint after observing the default lint command scan the newly generated bundles.
+- **Security:** Live probing used deliberately invalid synthetic credentials only. Local tests use generated synthetic secrets, verify no session for rejected attempts and assert that secrets do not appear in captured logs. No database or deployed runtime settings were modified. The user separately authorised publishing the tested patch.
+- **Affected files:** `frontend/lib/auth.ts`, `frontend/app/login/actions.ts`, `frontend/e2e/cloudflare-auth.mjs`, `frontend/package.json`, `frontend/eslint.config.mjs`, `docs/cloudflare-render-deployment.md`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+
+## 2026-09-09: Deploy frontend to Cloudflare and backend with PostgreSQL to Render
+
+- **Problem:** The staging demonstration requires a live deployment environment with secure separation between public web traffic, administrative backend services, and database storage, without incurring unnecessary cloud hosting costs or fabricating missing data.
+- **Decision:** Deploy the Next.js 16 frontend to Cloudflare Workers / Pages using the `@opennextjs/cloudflare` adapter with `nodejs_compat`. Deploy the FastAPI backend and managed PostgreSQL database to Render using Blueprint specification (`render.yaml`). Provide an idempotent schema initialisation script `backend/src/backend/init_db.py`.
+- **Alternatives considered:** Deploy all tiers on Render (exceeds free single web service tier); deploy backend on Cloudflare Workers (Cloudflare Workers Wasm/Python environment does not support persistent Uvicorn processes or native Psycopg binary sockets); single-server container deployment (adds VPS management overhead).
+- **Library selection:** Added `@opennextjs/cloudflare` and `wrangler` as frontend development dependencies. No runtime dependencies added to the backend; existing standard library, `fastapi`, and `psycopg` are sufficient.
+- **Trade-offs:** Render free tier web services spin down after 15 minutes of inactivity; frontend request timeout is set to 45 seconds (`MPLADS_API_TIMEOUT_MS`) to accommodate cold-start latency. Free Render databases have a 30-day retention limit suitable for ephemeral staging.
+- **Performance impact:** Frontend achieves global low-latency edge delivery via Cloudflare CDN. Server-to-server HTTPS requests to FastAPI are made only for authenticated reviewer routes.
+- **Maintainability impact:** `render.yaml` enables one-click Infrastructure-as-Code recreation on Render. `init_db.py` unifies schema migration across local development, CI, and staging environments.
+- **Security impact:** Database credentials and the `X-MPLADS-Review-Key` secret remain strictly server-side. Browser bundles never receive database strings or internal API keys.
+- **Affected files:** `render.yaml`, `backend/src/backend/init_db.py`, `backend/tests/test_init_db.py`, `frontend/wrangler.jsonc`, `frontend/open-next.config.ts`, `frontend/package.json`, `frontend/package-lock.json`, `frontend/lib/investigations.ts`, `frontend/app/command-centre/page.tsx`, `docs/cloudflare-render-deployment.md`, `docs/deployment.md`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
 
 ## 2026-09-08: Repair npm 10 lockfile compatibility
 

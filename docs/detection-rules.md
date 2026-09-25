@@ -1,5 +1,21 @@
 # Deterministic detector rules and feasibility
 
+## Exploratory near-duplicate comparison (not active)
+
+`backend.near_duplicate` is a read-only, untrained comparison model over the supplied `Works Sanctioned.csv`. It is separate from the reviewable detector run and does not add items to the Investigation Queue. SHA-256 identifies the source export; it is never a similarity feature.
+
+The model compares records with different Work IDs and exact normalised Work category, work type, State, constituency, IDA, sanction date and sanction amount. It then uses Python's `SequenceMatcher` to assign a 0 to 100 **description similarity** score. Exact descriptions remain with the active detector. It skips pairs with different numeric tokens or explicit phase, part, stage or bit markers. The exploratory threshold is 90% text similarity. This is neither a probability of duplication nor a fraud rating; no outcome labels were used to train or calibrate a probability. A top-scoring pair can still be separate solar-light installations using the same equipment specification because asset locations are absent from structured fields.
+
+On the supplied 16,000 sanctioned detail rows, the first 90% pass returned 4,881 pairs. The numeric and phase checks reduced this to 2,824 pairs. Top initial pairs included clearly separate Part-I/Part-II and Bit-I/Bit-II works, which is why those checks were added. The remaining volume is still too large for an unreviewed official queue. A reviewer must sample and label pairs, identify recurring template false positives, and approve a threshold before activation. No existing 174 reviewable groups or audit events were changed.
+
+Run a read-only calibration from `backend/`:
+
+```powershell
+uv run --frozen python -m backend.near_duplicate "../data/raw/Works Sanctioned.csv" --show 10
+```
+
+Output includes the source-file hash for provenance, model version, comparison fields, description score, work IDs, source row numbers and top descriptions. A fraud-probability model remains unavailable without verified outcomes, reliable asset/location/quantity evidence, and complete payment and project histories.
+
 Assessed and implemented where stated on 2026-09-07 against all six supplied CSV reports. The recorded export scope is All India, Lok Sabha. Coverage and snapshot completeness remain limited to the supplied exports. No composite risk score, fraud classification, compliance finding or predictive model is implemented. The active candidate rule is exposed only through the authenticated Investigation Queue API.
 
 SUPPORTED: the stated check has the necessary verified fields. PARTIALLY SUPPORTED: only a restricted version is possible. NOT SUPPORTED: essential evidence is absent.
