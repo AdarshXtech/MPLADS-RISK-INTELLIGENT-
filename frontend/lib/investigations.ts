@@ -44,6 +44,27 @@ export type InvestigationSummary = {
   dismissed: number;
 };
 
+export type AuditEvent = {
+  event_id: number;
+  run_id: string;
+  result_id: string;
+  detector_name: string;
+  work_description: string;
+  from_status: Status;
+  to_status: Status;
+  decision: string | null;
+  reason_code: string | null;
+  reviewer: string;
+  created_at: string;
+};
+
+export type AuditEventPage = {
+  items: AuditEvent[];
+  page: number;
+  page_size: number;
+  total: number;
+};
+
 export type CandidateDetail = Candidate & {
   detector_id: string;
   fields_used: string[];
@@ -139,6 +160,10 @@ export function getCandidates(parameters: URLSearchParams): Promise<CandidatePag
 
 export function getInvestigationSummary(): Promise<InvestigationSummary> {
   return request("/investigation-summary");
+}
+
+export function getReviewEvents(parameters: URLSearchParams): Promise<AuditEventPage> {
+  return request(`/review-events?${parameters.toString()}`);
 }
 
 export function getCandidate(id: string): Promise<CandidateDetail> {

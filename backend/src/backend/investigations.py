@@ -115,6 +115,27 @@ class InvestigationSummary(BaseModel):
     dismissed: int
 
 
+class AuditEvent(BaseModel):
+    event_id: int
+    run_id: str
+    result_id: str
+    detector_name: str
+    work_description: str
+    from_status: Status
+    to_status: Status
+    decision: Decision | None
+    reason_code: str | None
+    reviewer: str
+    created_at: datetime
+
+
+class AuditEventPage(BaseModel):
+    items: list[AuditEvent]
+    page: int
+    page_size: int
+    total: int
+
+
 class SourceEvidence(BaseModel):
     source_sha256: str
     parser_version: str
@@ -254,6 +275,73 @@ def investigation_summary(connection) -> InvestigationSummary:
         verification_requested=row[3],
         resolved=row[4],
         dismissed=row[5],
+    )
+
+
+AUDIT_QUERY = """
+WITH selected_run AS (
+    SELECT run_id FROM mplads_detector_run
+    WHERE run_status='reviewable'
+    ORDER BY jsonb_array_length(source_batches) DESC, run_id DESC LIMIT 1
+)
+SELECT event.event_id, event.run_id, event.result_id, result.detector_name,
+       COALESCE(result.evidence->'matched_values'->>'Work description', ''),
+       event.from_status, event.to_status, event.decision, event.reason_code,
+       event.reviewer, event.created_at
+FROM mplads_review_event event
+JOIN selected_run selected USING (run_id)
+JOIN mplads_detector_result result
+  ON result.run_id=event.run_id AND result.result_id=event.result_id
+"""
+
+
+def list_review_events(
+    connection, page: int, page_size: int, query: str = "", status: str = ""
+) -> AuditEventPage:
+    clauses = ["1=1"]
+    parameters: list[object] = []
+    if query:
+        term = query.strip().lower()
+        clauses.append(
+            "(strpos(lower(event.result_id), %s) > 0 "
+            "OR strpos(lower(event.reviewer), %s) > 0 "
+            "OR strpos(lower(result.evidence::text), %s) > 0)"
+        )
+        parameters.extend([term, term, term])
+    if status:
+        clauses.append("event.to_status = %s")
+        parameters.append(status)
+    where = " WHERE " + " AND ".join(clauses)
+    total = connection.execute(
+        "SELECT count(*) FROM (" + AUDIT_QUERY + where + ") review_events",
+        parameters,
+    ).fetchone()[0]
+    rows = connection.execute(
+        AUDIT_QUERY
+        + where
+        + " ORDER BY event.created_at DESC, event.event_id DESC LIMIT %s OFFSET %s",
+        [*parameters, page_size, (page - 1) * page_size],
+    ).fetchall()
+    return AuditEventPage(
+        items=[
+            AuditEvent(
+                event_id=row[0],
+                run_id=row[1],
+                result_id=row[2],
+                detector_name=row[3],
+                work_description=row[4],
+                from_status=row[5],
+                to_status=row[6],
+                decision=row[7],
+                reason_code=row[8],
+                reviewer=row[9],
+                created_at=row[10],
+            )
+            for row in rows
+        ],
+        page=page,
+        page_size=page_size,
+        total=total,
     )
 
 

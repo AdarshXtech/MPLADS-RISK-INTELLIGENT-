@@ -1,5 +1,7 @@
 # Responsive UI verification
 
+Verification on 2026-09-26 covers the six source-backed surfaces: sign-in, Command Centre, Investigation Queue, candidate evidence and duplicate comparison, Data Quality and Review Audit Trail. The full 66-test production-build run passed all Chromium and Firefox scenarios and 19 of 22 WebKit scenarios. The three affected WebKit workflows then passed focused reruns after a same-route retry correction and realistic budgets for long end-to-end flows. The responsive route suite covers the Audit Trail at every viewport below, including loading, empty, error, filtering and mobile-card states.
+
 Publication merge on 2026-09-25: dedicated Data Quality navigation and pending-review ordering are retained with the Suchak AI design. The merged suite passed 63 browser checks and exposed a source-count selector collision in three browsers. After scoping the selector to the source section, all nine queue checks passed in the focused rerun. This covers the changed navigation, provenance text sizing, review submission, filtering, export and Data Quality active state alongside the passing map/responsive checks.
 
 The 2026-09-25 Stitch adaptation is described in [design.md](design.md). The shared header, light navigation, sign-in, filters, source comparison and reviewer rail use the same responsive checks. `stitch-ui.spec.ts` additionally verifies password visibility with keyboard activation, side-by-side desktop evidence/review placement, stacked phone placement, pending review submission and truthful failed-service status.

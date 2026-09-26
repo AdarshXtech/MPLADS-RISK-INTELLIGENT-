@@ -98,7 +98,9 @@ def test_same_locality_with_matching_evidence_creates_candidate():
     candidate = candidates[0]
     assert candidate["detector_id"] == "locality_duplicate_candidate"
     assert candidate["evidence"]["locality_evidence"]["level"] == "ward_village"
-    assert candidate["evidence"]["supporting_signals"]
+    signals = candidate["evidence"]["supporting_signals"]
+    assert signals
+    assert any(signal["signal"] == "same_sanction_amount" for signal in signals)
 
 
 def test_nearby_records_need_description_and_supporting_evidence():

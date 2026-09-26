@@ -1,5 +1,15 @@
 # Codex log
 
+## 2026-09-26: Complete source-backed audit and duplicate comparison screens
+
+- **Task:** Reinspect the repository and seven supplied Stitch archives, preserve the existing working application and complete the missing real audit screen and automatic duplicate-pair map behaviour.
+- **Files created:** `frontend/app/audit-trail/page.tsx`, `frontend/app/audit-trail/loading.tsx`.
+- **Files modified:** Backend investigation query/API and detector/tests; frontend investigations client, shared shell/CSS, queue, candidate comparison/map and browser fixtures/tests; PRD, architecture, design, feature connection, technology, decisions, flow and this session log.
+- **Implementation decisions:** The Review Audit Trail reads only existing append-only review events for the latest reviewable run through a protected, server-filtered and paginated endpoint. It explicitly avoids the prototype's fabricated statutory, financial and cryptographic claims. The existing Leaflet comparison now fits each selected pair automatically, uses safe text tooltips, retains the A/B line, displays the Leaflet-calculated spherical separation and presents real source fields in the comparison cards. No schema, authentication, detector threshold or review transition changed.
+- **Detector correction:** Replaced a corrupted sanction-amount field spelling in locality supporting-signal lookup with the canonical staged field name. This restores an intended corroborating signal; it does not change thresholds, severity or the exact-match detector.
+- **Verification:** ESLint, TypeScript, Ruff lint and Ruff format passed. The complete backend run passed 49 tests and skipped 15 PostgreSQL-dependent cases because this shell does not expose `TEST_DATABASE_URL`. Focused Chromium queue, audit and map checks passed. The production Next.js build completed through Playwright. The complete 66-test Chromium, Firefox and WebKit run passed 63 scenarios and exposed three WebKit timing/retry issues. After adding a genuine same-route retry navigation and realistic budgets for the two long workflows, all three affected WebKit scenarios passed in focused production-build reruns.
+- **Known limitations:** Exact markers remain unavailable until reviewed coordinates exist. The PostgreSQL-backed audit query is covered by the existing integration fixture but was skipped locally without `TEST_DATABASE_URL`. Browser evidence uses clearly labelled synthetic fixtures; no official review records were changed.
+
 ## 2026-09-25: Consolidate supplied UI screens into Suchak AI
 
 - **Task:** Remove the visible overlap between the previous interface and the supplied Stitch screens across every implemented frontend route.

@@ -275,14 +275,14 @@ def _supporting_signals(left_record, right_record, left_location, right_location
                 "value": left["Sanction Date"],
             }
         )
-    if left.get("Sanction Amount ( â‚¹ )") and left.get(
-        "Sanction Amount ( â‚¹ )"
-    ) == right.get("Sanction Amount ( â‚¹ )"):
+    if left.get("Sanction Amount ( ₹ )") and left.get(
+        "Sanction Amount ( ₹ )"
+    ) == right.get("Sanction Amount ( ₹ )"):
         signals.append(
             {
                 "signal": "same_sanction_amount",
                 "label": "Same sanction amount",
-                "value": left["Sanction Amount ( â‚¹ )"],
+                "value": left["Sanction Amount ( ₹ )"],
             }
         )
     return signals
@@ -562,7 +562,7 @@ def locality_duplicate_candidates(records, locations=None):
                     "IDA",
                     "Constituency",
                     "Sanction Date",
-                    "Sanction Amount ( â‚¹ )",
+                    "Sanction Amount ( ₹ )",
                 ],
                 evidence,
                 [left_record, right_record],

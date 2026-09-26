@@ -4,7 +4,7 @@ Status: requirements baseline with verified ingestion, one deterministic candida
 
 ## Purpose and users
 
-Product name: **Suchak AI**. The supplied logo is implemented across sign-in and the shared administrative shell, with consistent page metadata. The potential-duplicate locality view includes an India map for a selected pair, exact pins only where verified coordinates exist, and authenticated click-to-fetch source details. Missing coordinates are disclosed rather than inferred from administrative names. Larger groups support selection of two distinct records. The map is supporting evidence, not a detector or a finding of duplication.
+Product name: **Suchak AI**. The supplied logo is implemented across sign-in and the shared administrative shell, with consistent page metadata. The potential-duplicate locality view includes an India map for a selected pair, exact pins only where verified coordinates exist, automatic pair fitting, a connecting line, dynamically calculated distance and authenticated click-to-fetch source details. Missing coordinates are disclosed rather than inferred from administrative names. Larger groups support selection of two distinct records. The map is supporting evidence, not a detector or a finding of duplication.
 
 SIH26102 is the project identifier supplied by the team. The official statement still requires verification; see [source register](source-register.md). Build an MPLADS administrative decision-support layer for MoSPI, State Nodal Authorities, District Authorities and MPs. The primary workflow is a ranked investigation queue, not a decorative dashboard.
 
@@ -41,7 +41,7 @@ Phase 0 is partial. Field inspection, file ingestion and PostgreSQL staging now 
 
 ## Current implementation
 
-The Data Quality navigation now opens a separate authenticated route for source counts, validation issues and provenance. It uses the existing overview endpoint and does not add a risk detector.
+The Data Quality navigation opens a separate authenticated route for source counts, validation issues and provenance. The Review Audit Trail opens a protected, paginated view of existing append-only reviewer transitions for the latest reviewable detector run. Neither route adds or changes a risk detector.
 
 The frontend adopts the supplied Stitch visual references through a shared product header, light navigation, compact metrics, source comparison, a responsive reviewer rail and a refreshed sign-in form. Only implemented controls and API-backed evidence are displayed. See [frontend design](design.md) for the exact component map and design boundaries.
 
