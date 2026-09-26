@@ -6,14 +6,14 @@ Inspected 2026-09-06. Manifest declarations are not claims of runtime verificati
 | --- | --- | --- |
 | Frontend | Next.js 16.3.4, React 19.2.8, TypeScript 5, Tailwind 4 | Command centre and authenticated Investigation Queue with review actions and CSV export |
 | Frontend icons | Lucide React | Named icon imports for navigation, input and action controls; added for the supplied Stitch redesign |
-| Comparison map | Leaflet 1.9.4, TypeScript types 1.9.21 | Client-only, dynamically loaded map with local geoBoundaries India outline; optional OpenStreetMap tiles; no geocoding or risk calculation |
-| Backend | FastAPI, Uvicorn, Pydantic | Status, aggregate data, protected candidate/evidence, review-event and CSV endpoints |
+| Comparison map | Leaflet 1.9.4, TypeScript types 1.9.21 | Client-only, dynamically loaded map with local geoBoundaries India outline, automatic A/B bounds, line and spherical distance; optional OpenStreetMap tiles; no geocoding or risk calculation |
+| Backend | FastAPI, Uvicorn, Pydantic | Status, aggregate data, protected candidate/evidence, paginated audit-event, review-event and CSV endpoints |
 | Python | Python 3.12 selection, uv, uv.lock | Use uv and the committed lock for reproducibility; pyproject currently permits Python >=3.12 |
 | Analytics | pandas, NumPy, scikit-learn declared | Active deterministic potential-duplicate rule uses the standard library; no trained ML model |
 | Persistence | PostgreSQL 17.11 and psycopg[binary] | Project-local loopback service; two-table staging verified; SQLAlchemy remains declared but unused |
-| Backend quality | pytest and Ruff | 50 tests pass against the configured dedicated test database; Ruff passes |
+| Backend quality | pytest and Ruff | 49 local tests pass and 15 PostgreSQL-backed cases are skipped when `TEST_DATABASE_URL` is unavailable; Ruff passes |
 | Frontend quality | ESLint and production build | Both pass; no Vitest dependency added for the current server-rendered slice |
-| Browser QA | Playwright MCP plus pinned `@playwright/test` | MCP verified the live Investigation Queue in Chromium at the permitted origin. The reproducible E2E suite covers Chromium, Firefox and WebKit, including authentication, filters, pagination, evidence, review history, keyboard use and phone/tablet layouts |
+| Browser QA | Pinned `@playwright/test` | The reproducible 66-scenario E2E suite covers Chromium, Firefox and WebKit, including authentication, filters, pagination, audit history, duplicate comparison, keyboard use and phone/tablet layouts |
 | Continuous integration | GitHub Actions | Two read-only jobs reproduce backend PostgreSQL integration checks and frontend production-build browser QA on pushes and pull requests to `master`; no deployment permission or project secret |
 | Responsive screenshots | Existing Playwright and Node.js | Eight viewport sizes, additional 640-pixel reflow check, loading/error/empty/review states and an optional local PNG gallery; see [responsive-ui.md](responsive-ui.md) |
 

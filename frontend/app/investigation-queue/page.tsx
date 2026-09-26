@@ -32,7 +32,7 @@ export default async function InvestigationQueuePage({ searchParams }: { searchP
   for (const key of ["query", "state", "status", "locality", "location_status"] as const) if (supplied[key]) parameters.set(key, supplied[key]);
   let result;
   try { result = await getCandidates(parameters); } catch {
-    return <QueueShell username={username} connected={false}><main className="page-content" id="main-content" tabIndex={-1}><section className="error-panel" role="alert"><h1>Investigation Queue unavailable</h1><p>The review service could not load candidates. Confirm that FastAPI, PostgreSQL and the review service key are configured.</p><Link className="retry-link" href="/investigation-queue">Retry</Link></section></main></QueueShell>;
+    return <QueueShell username={username} connected={false}><main className="page-content" id="main-content" tabIndex={-1}><section className="error-panel" role="alert"><h1>Investigation Queue unavailable</h1><p>The review service could not load candidates. Confirm that FastAPI, PostgreSQL and the review service key are configured.</p><Link className="retry-link" href="/investigation-queue?retry=1">Retry</Link></section></main></QueueShell>;
   }
   const preserved = new URLSearchParams({ sort: selectedSort });
   for (const key of ["query", "state", "status", "locality", "location_status"] as const) if (supplied[key]) preserved.set(key, supplied[key]);

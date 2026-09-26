@@ -67,6 +67,9 @@ export default function LocationMapCanvas({ records, selectedKey, onSelect }: { 
         keyboard: true, title: `Point ${letter}: ${source.work_id}`,
         icon: L.divIcon({ className: `comparison-marker marker-${letter.toLowerCase()}`, html: `<span>${letter}</span>`, iconSize: [44, 44], iconAnchor: index === 0 ? [44, 22] : [0, 22] }),
       }).addTo(layer).on("click", () => onSelect(source));
+      const tooltip = document.createElement("span");
+      tooltip.textContent = `Work ${letter}: ${source.work_id}`;
+      marker.bindTooltip(tooltip, { direction: index === 0 ? "left" : "right" });
       const element = marker.getElement();
       element?.setAttribute("aria-label", `Point ${letter}: ${source.work_id}`);
       element?.setAttribute("role", "button");
@@ -74,7 +77,17 @@ export default function LocationMapCanvas({ records, selectedKey, onSelect }: { 
       element?.addEventListener("keydown", (event) => { if (event.key === " " || event.key === "Enter") { event.preventDefault(); event.stopPropagation(); onSelect(source); } });
       markers.current.push({ marker, key: sourceKey(source) });
     });
-    if (positions.length === 2) L.polyline(positions, { color: "#526d7b", weight: 2, dashArray: "5 6", interactive: false }).addTo(layer);
+    if (positions.length === 2) {
+      const distance = L.latLng(positions[0]).distanceTo(positions[1]);
+      const distanceLabel = distance < 1000 ? `${distance.toFixed(1)} m` : `${(distance / 1000).toFixed(2)} km`;
+      L.polyline(positions, { color: "#526d7b", weight: 3, dashArray: "5 6", interactive: false }).addTo(layer)
+        .bindTooltip(`Distance between works: ${distanceLabel}`, { permanent: true, direction: "center", className: "distance-tooltip" });
+      map.fitBounds(L.latLngBounds(positions), { padding: [64, 64], maxZoom: 17, animate: false });
+    } else if (positions.length === 1) {
+      map.setView(positions[0], 8, { animate: false });
+    } else {
+      map.fitBounds(INDIA_BOUNDS, { padding: [12, 12], animate: false });
+    }
     return () => { layer.remove(); markers.current = []; };
   }, [records, status, onSelect, engine]);
 
@@ -117,7 +130,7 @@ export default function LocationMapCanvas({ records, selectedKey, onSelect }: { 
     {status === "loading" && <p className="map-loading-overlay">Loading India map...</p>}</div>
     {status === "error" && <div className="map-load-error" role="alert"><p>India outline could not be loaded. Available source markers are retained.</p><button className="secondary-button" type="button" onClick={() => { setStatus("loading"); setAttempt((value) => value + 1); }}><RotateCw size={16} aria-hidden="true" />Retry map</button></div>}
     {streets && tileError && <p className="map-note" role="alert">Street tiles are unavailable. The India outline and source markers remain available.</p>}
-    <div className="map-caption"><span>India reference outline; not a cadastral or legal boundary.</span><span>{separation === null ? "Pair distance unavailable" : `Straight-line separation: ${separation < 1000 ? `${separation.toFixed(1)} m` : `${(separation / 1000).toFixed(2)} km`}`}</span></div>
+    <div className="map-caption"><span>India reference outline; not a cadastral or legal boundary. The map automatically fits the selected verified locations.</span><strong className="map-distance-indicator">{separation === null ? "Distance between works unavailable" : `Distance between works: ${separation < 1000 ? `${separation.toFixed(1)} m` : `${(separation / 1000).toFixed(2)} km`}`}</strong></div>
     {coincident && <p className="map-note">Both records have the same verified coordinates. A and B share one location.</p>}
   </div>;
 }

@@ -79,6 +79,26 @@ createServer(async (request, response) => {
       dismissed: current.filter((status) => status === "DISMISSED").length,
     });
   }
+  if (request.method === "GET" && url.pathname === "/review-events") {
+    const page = Number(url.searchParams.get("page") ?? 1);
+    const pageSize = Number(url.searchParams.get("page_size") ?? 20);
+    const query = (url.searchParams.get("query") ?? "").toLowerCase();
+    const requestedStatus = url.searchParams.get("status") ?? "";
+    const events = [...histories.entries()].flatMap(([resultId, history]) => {
+      const candidate = candidates.find((item) => item.result_id === resultId);
+      return history.map((event, index) => ({
+        event_id: Number(resultId.slice(-2)) * 100 + index,
+        run_id: "synthetic-reviewable-run",
+        result_id: resultId,
+        detector_name: candidate?.detector_name ?? "Potential duplicate work candidate",
+        work_description: candidate?.work_description ?? "",
+        ...event,
+      }));
+    }).filter((event) => (!requestedStatus || event.to_status === requestedStatus) &&
+      (!query || JSON.stringify(event).toLowerCase().includes(query)))
+      .sort((left, right) => right.created_at.localeCompare(left.created_at) || right.event_id - left.event_id);
+    return send(response, 200, { items: events.slice((page - 1) * pageSize, page * pageSize), page, page_size: pageSize, total: events.length });
+  }
   if (request.method === "GET" && ["/investigation-candidates", "/investigation-candidates.csv"].includes(url.pathname)) {
     const page = Number(url.searchParams.get("page") ?? 1);
     const query = (url.searchParams.get("query") ?? "").toLowerCase();
@@ -136,7 +156,7 @@ function detail(candidate) {
     evidence: { matched_values: { "Work description": candidate.work_description, State: candidate.state, Constituency: candidate.constituency, IDA: candidate.ida, "Sanction Date": candidate.sanction_date, "Sanction Amount": candidate.sanction_amount } },
     verification_step: "Verify the underlying synthetic records before deciding.",
     limitations: ["Synthetic browser-test fixture only.", "This is not proof of duplication or misuse."],
-    source_records: workIds.map((work_id, index) => ({ source_sha256: "synthetic-source-sha256", parser_version: "test", record_number: index + 1, work_id, cleaned_values: { "Work description": candidate.work_description }, derived_values: { work_id }, validation_issues: [], location: { status: candidate.location_statuses[index % candidate.location_statuses.length], state: candidate.state, district: "Synthetic district", constituency: candidate.constituency, block_tehsil: "Synthetic block", ward_village: "Synthetic ward", verified_address_text: null, latitude: candidate.distance_metres === null ? null : 20.1, longitude: candidate.distance_metres === null ? null : 78.1, location_source: "Synthetic browser fixture", last_verified_at: null } })),
+    source_records: workIds.map((work_id, index) => ({ source_sha256: "synthetic-source-sha256", parser_version: "test", record_number: index + 1, work_id, cleaned_values: { "Work description": candidate.work_description, "Constituency": candidate.constituency, "IDA": candidate.ida, "Sanction Amount ( INR )": candidate.sanction_amount }, derived_values: { work_id }, validation_issues: [], location: { status: candidate.location_statuses[index % candidate.location_statuses.length], state: candidate.state, district: "Synthetic district", constituency: candidate.constituency, block_tehsil: "Synthetic block", ward_village: "Synthetic ward", verified_address_text: null, latitude: candidate.distance_metres === null ? null : 20.1, longitude: candidate.distance_metres === null ? null : 78.1, location_source: "Synthetic browser fixture", last_verified_at: null } })),
     history,
   };
 }

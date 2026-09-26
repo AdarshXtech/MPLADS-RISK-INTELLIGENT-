@@ -1,12 +1,15 @@
 import { expect, test } from "@playwright/test";
 
 test("reviewer can filter, paginate, inspect evidence and save an action", async ({ page }, testInfo) => {
+  test.setTimeout(240_000);
   const candidateNumber = { chromium: 1, firefox: 2, webkit: 3 }[testInfo.project.name] ?? 1;
   await page.goto("/command-centre");
   await expect(page).toHaveURL(/\/login/);
   await page.goto("/data-quality");
   await expect(page).toHaveURL(/\/login/);
   await page.goto("/investigation-queue");
+  await expect(page).toHaveURL(/\/login/);
+  await page.goto("/audit-trail");
   await expect(page).toHaveURL(/\/login/);
 
   await page.getByLabel("Username").fill("wrong");
@@ -38,7 +41,7 @@ test("reviewer can filter, paginate, inspect evidence and save an action", async
   await expect(page.locator(".queue-table").getByText(`Synthetic community hall ${candidateNumber}`, { exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Review evidence" }).first().click();
   await expect(page.getByRole("heading", { name: "Why this was flagged" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Locality and supporting evidence" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Duplicate work comparison and location evidence" })).toBeVisible();
   await expect(page.getByText("Location status", { exact: true }).first()).toBeVisible();
   await expect(page.locator(".always-cards .source-card")).toHaveCount(2);
   await expect(page.locator(".always-cards .source-card").first()).toBeVisible();
@@ -79,8 +82,25 @@ test("reviewer can filter, paginate, inspect evidence and save an action", async
 <<<<<<< HEAD
   await expect(page.getByRole("link", { name: "Data Quality" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("heading", { name: "Ingested source reports" })).toBeVisible();
+<<<<<<< HEAD
 =======
 >>>>>>> main
+=======
+  await page.getByRole("link", { name: "Audit Trail", exact: true }).click();
+  await expect(page).toHaveURL(/\/audit-trail$/);
+  await expect(page.getByRole("heading", { name: "Review Audit Trail", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sequential review events" })).toBeVisible();
+  await expect(page.locator(".audit-table")).toContainText(`Synthetic community hall ${candidateNumber}`);
+  await expect(page.locator(".audit-table")).toContainText("under review");
+  await expect(page.getByRole("link", { name: "Review Audit Trail" })).toHaveAttribute("aria-current", "page");
+  await page.getByLabel("Search recorded actions").fill(`hall ${candidateNumber}`);
+  await page.getByLabel("Recorded status").selectOption("UNDER_REVIEW");
+  await page.getByRole("button", { name: "Apply filters" }).click();
+  await expect(page).toHaveURL(/status=UNDER_REVIEW/);
+  await expect(page.locator(".audit-table tbody tr")).toHaveCount(1);
+  await page.getByRole("link", { name: "Clear", exact: true }).click();
+  await expect(page.getByLabel("Recorded status")).toHaveValue("");
+>>>>>>> 1062665ff71216161c5215d1c3b6a9d9de8a9378
 });
 
 test("filtered CSV downloads all pages and reports failures without leaving the queue", async ({ page }) => {

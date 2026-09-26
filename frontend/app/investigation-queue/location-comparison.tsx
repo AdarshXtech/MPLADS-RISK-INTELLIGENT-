@@ -9,12 +9,17 @@ import MapCanvas from "./location-map-canvas";
 
 type DetailState = { status: "idle" } | { status: "loading"; record: MapRecord } | { status: "ready"; record: MapRecord; source: SourceRecord } | { status: "error"; record: MapRecord; expired: boolean };
 const display = (value: unknown) => value === null || value === undefined || value === "" ? "Not supplied" : typeof value === "object" ? JSON.stringify(value, null, 2) : String(value);
+const cleaned = (record: SourceRecord, name: string) => display(record.cleaned_values[name]);
+const sanctionAmount = (record: SourceRecord) => {
+  const match = Object.entries(record.cleaned_values).find(([key]) => key.startsWith("Sanction Amount"));
+  return display(match?.[1]);
+};
 
 function Fields({ values }: { values: Record<string, unknown> }) {
   return <dl className="map-detail-fields">{Object.entries(values).map(([key, value]) => <div key={key}><dt>{key.replaceAll("_", " ")}</dt><dd>{display(value)}</dd></div>)}</dl>;
 }
 
-export function LocationComparison({ candidateId, sources }: { candidateId: string; sources: MapRecord[] }) {
+export function LocationComparison({ candidateId, sources }: { candidateId: string; sources: SourceRecord[] }) {
   const [pair, setPair] = useState<[number, number]>([0, 1]);
   const [detail, setDetail] = useState<DetailState>({ status: "idle" });
   const requestRef = useRef<AbortController | null>(null);
@@ -48,6 +53,7 @@ export function LocationComparison({ candidateId, sources }: { candidateId: stri
   }
 
   return <div className="location-comparison">
+    <div className="duplicate-comparison-alert" role="note"><strong>Potential duplicate work candidate</strong><span>Compare Work A and Work B, then verify the source records before recording a decision.</span></div>
     {sources.length > 2 && <div className="comparison-selectors">{[0, 1].map((slot) => <div key={slot}><label htmlFor={`comparison-${slot}`}>Work {slot === 0 ? "A" : "B"}</label><select id={`comparison-${slot}`} value={pair[slot]} onChange={(event) => changePair(slot, Number(event.target.value))}>{sources.map((source, index) => <option key={sourceKey(source)} value={index} disabled={index === pair[1 - slot]}>{source.work_id} (record {source.record_number})</option>)}</select></div>)}</div>}
     <MapCanvas records={records} selectedKey={"record" in detail ? sourceKey(detail.record) : null} onSelect={loadSource} />
     <div className="map-records">{records.map((source, index) => {
@@ -55,9 +61,8 @@ export function LocationComparison({ candidateId, sources }: { candidateId: stri
       const selected = "record" in detail && sourceKey(detail.record) === sourceKey(source);
       return <div className={`map-record map-record-${index === 0 ? "a" : "b"}`} key={sourceKey(source)}>
         <div className="map-record-title"><span className="point-label">{index === 0 ? "A" : "B"}</span><strong>{source.work_id}</strong></div>
-        <p>{[source.location.ward_village, source.location.district, source.location.state].filter(Boolean).join(", ") || "Location not supplied"}</p>
-        <p className="map-coordinate">{point ? `${point[0]}, ${point[1]}` : "Exact point unavailable: verified coordinates required."}</p>
-        <p className="cell-note">{source.location.status.replaceAll("_", " ").toLowerCase()}</p>
+        <p className="map-work-title">{cleaned(source, "Work description")}</p>
+        <dl className="map-record-fields"><div><dt>Location</dt><dd>{[source.location.ward_village, source.location.block_tehsil, source.location.district, source.location.state].filter(Boolean).join(", ") || "Not supplied"}</dd></div><div><dt>Coordinates</dt><dd className="map-coordinate">{point ? `${point[0]}, ${point[1]}` : "Exact point unavailable: verified coordinates required."}</dd></div><div><dt>Location status</dt><dd>{source.location.status.replaceAll("_", " ").toLowerCase()}</dd></div><div><dt>Sanction amount</dt><dd>{sanctionAmount(source)}</dd></div><div><dt>Constituency</dt><dd>{source.location.constituency ?? cleaned(source, "Constituency")}</dd></div><div><dt>District authority</dt><dd>{cleaned(source, "IDA")}</dd></div></dl>
         <button className="secondary-button" type="button" aria-pressed={selected} aria-controls="comparison-source-detail" onClick={() => void loadSource(source)}><FileSearch size={16} aria-hidden="true" />View source {index === 0 ? "A" : "B"}</button>
       </div>;
     })}</div>

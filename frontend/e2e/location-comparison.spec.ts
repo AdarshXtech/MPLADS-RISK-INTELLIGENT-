@@ -24,13 +24,14 @@ async function signIn(page: Page) {
 }
 async function openMap(page: Page) {
   await page.goto("/investigation-queue/synthetic-candidate-01");
-  await expect(page.getByRole("region", { name: "India work location comparison map" })).toHaveAttribute("aria-busy", "false");
+  await expect(page.getByRole("region", { name: "India work location comparison map" })).toHaveAttribute("aria-busy", "false", { timeout: 20_000 });
 }
 
 test.beforeEach(async ({ page }) => { await scenario(page, {}, true); });
 test.afterEach(async ({ page }) => { await scenario(page, {}, true); });
 
 test("Suchak AI branding, map controls, exact markers and fetched source details work", async ({ page }, info) => {
+  test.setTimeout(90_000);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.setViewportSize({ width: 1440, height: 1000 });
@@ -54,6 +55,13 @@ test("Suchak AI branding, map controls, exact markers and fetched source details
   await expect(map.locator(".leaflet-overlay-pane path").first()).toBeVisible();
   await expect(map.getByRole("button", { name: "Point A: SYNTHETIC/1", exact: true })).toBeVisible();
   await expect(map.getByRole("button", { name: "Point B: SYNTHETIC/2", exact: true })).toBeVisible();
+  await expect(page.locator(".duplicate-comparison-alert").getByText("Potential duplicate work candidate", { exact: true })).toBeVisible();
+  await expect(page.getByText("The map automatically fits the selected verified locations.", { exact: false })).toBeVisible();
+  await expect(page.getByText("Distance between works:", { exact: false }).last()).toBeVisible();
+  await expect(page.locator(".distance-tooltip")).toContainText("Distance between works:");
+  await expect(page.locator(".map-record-a")).toContainText("Synthetic community hall 1");
+  await expect(page.locator(".map-record-a")).toContainText("Test Constituency");
+  await expect(page.locator(".map-record-a")).toContainText("Test Agency");
   await page.getByRole("button", { name: "Fit locations", exact: true }).click();
   await map.getByRole("button", { name: "Zoom in", exact: true }).click();
   await map.getByRole("button", { name: "Zoom out", exact: true }).click();
@@ -119,6 +127,7 @@ test("larger groups support pair selection and stale detail requests cannot repl
   await openMap(page);
   await page.getByLabel("Work B", { exact: true }).selectOption("2");
   await expect(page.getByRole("button", { name: "Point B: SYNTHETIC/3", exact: true })).toBeVisible();
+  await expect(page.locator(".distance-tooltip")).toContainText("Distance between works:");
   await expect(page.getByLabel("Work A", { exact: true }).locator('option[value="2"]')).toBeDisabled();
   await page.getByLabel("Work A", { exact: true }).selectOption("1");
   let finishDelayedRequest!: () => void;

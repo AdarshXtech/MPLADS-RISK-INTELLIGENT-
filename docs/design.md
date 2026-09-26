@@ -1,6 +1,6 @@
 # Suchak AI frontend design system
 
-Updated 2026-09-25. This document describes the implemented frontend and its unified route shell.
+Updated 2026-09-26. This document describes the implemented frontend and its unified route shell.
 
 ## Design references
 
@@ -22,6 +22,7 @@ The implementation uses the dark identity header, light operational navigation, 
 | Source readiness and review workload | `frontend/app/command-centre/dashboard.tsx`, with route entry points in `command-centre/page.tsx` and `data-quality/page.tsx` |
 | Review distribution and filtered workload links | `frontend/app/command-centre/review-overview.tsx` |
 | Candidate filters, results and pagination | `frontend/app/investigation-queue/page.tsx` |
+| Append-only cross-candidate review history | `frontend/app/audit-trail/page.tsx` |
 | CSV download with pending/error/success states | `frontend/app/investigation-queue/export-button.tsx` |
 | Evidence, source comparison, review form and history | `frontend/app/investigation-queue/[id]/page.tsx` |
 | India map, pair selection and fetched source details | `frontend/app/investigation-queue/location-comparison.tsx`, `location-map-canvas.tsx`, `location-types.ts` |
@@ -64,7 +65,7 @@ All counts, match confidence, severity and source records come from the existing
 
 The shared `Brand` renders the supplied PNG unchanged. CSS frames its transparent margins; the header uses a white backplate so the original dark wordmark remains readable. Sign-in, authenticated routes, footer, page titles and icon metadata share the Suchak AI identity. The Command Centre reference is adapted into actual review-state bars, three working filtered-queue links and a full-width source matrix. Its illustrative financial, state and trend values are not imported.
 
-The locality section contains a client-only Leaflet map with a bundled India reference outline. Exactly the selected A/B pair is considered for markers. Only `VERIFIED_COORDINATES` records with finite, valid latitude/longitude produce a pin; administrative names and unverified addresses never produce substitute points. Opposite marker anchors keep co-located works selectable at their unchanged coordinates. Larger groups offer two distinct work selectors.
+The locality section contains a client-only Leaflet map with a bundled India reference outline. Exactly the selected A/B pair is considered for markers. Only `VERIFIED_COORDINATES` records with finite, valid latitude/longitude produce a pin; administrative names and unverified addresses never produce substitute points. Opposite marker anchors keep co-located works selectable at their unchanged coordinates. Larger groups offer two distinct work selectors. Every pair change automatically fits the available verified points, redraws the connecting line and updates the displayed spherical distance. The comparison cards use only the candidate's existing source fields.
 
 Clicking a marker or its source button fetches the record through the authenticated Next.js route. The detail panel displays available provenance, location/verification, cleaned values, derived values and validation issues. It includes loading, retry and expired-session states and cancels stale requests. Enter and Space activate markers. Missing coordinates do not prevent source detail inspection.
 
@@ -72,6 +73,6 @@ India view, fit locations, zoom and optional street tiles are implemented contro
 
 `frontend/e2e/location-comparison.spec.ts` exercises branding, workload links, map controls, marker selection, pair changes, coincident/missing/invalid coordinates, authenticated membership, recovery and stale requests across all three browsers.
 
-The design exports' invented financial exposure, live-sync timing, clearance levels, certification/legal assertions, demo credentials, notifications, support links, passkeys, hardware tokens and sanction-freezing actions are not displayed. The implemented sign-in, server-side filters, pagination, CSV export, review transitions and append-only history continue to use their existing handlers.
+The design exports' invented financial exposure, live-sync timing, clearance levels, certification/legal assertions, demo credentials, notifications, support links, passkeys, hardware tokens and sanction-freezing actions are not displayed. The implemented sign-in, server-side filters, pagination, CSV export, review transitions and append-only history continue to use their existing handlers. The Audit Trail screen shows real review events only and disclaims statutory or cryptographic certification.
 
 See [responsive-ui.md](responsive-ui.md) for reproducible screenshots and browser coverage. Synthetic fixtures are used only by the test suite.

@@ -10,6 +10,7 @@ from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 
 from backend.investigations import (
+    AuditEventPage,
     CandidateDetail,
     CandidatePage,
     InvestigationSummary,
@@ -20,6 +21,7 @@ from backend.investigations import (
     export_candidates,
     investigation_summary,
     list_candidates,
+    list_review_events,
 )
 
 app = FastAPI(
@@ -148,6 +150,24 @@ def investigation_workload(
     connection: Annotated[psycopg.Connection, Depends(database_connection)],
 ):
     return investigation_summary(connection)
+
+
+@app.get(
+    "/review-events",
+    response_model=AuditEventPage,
+    dependencies=[Depends(require_review_key)],
+)
+def review_events(
+    connection: Annotated[psycopg.Connection, Depends(database_connection)],
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+    query: Annotated[str, Query(max_length=200)] = "",
+    status: Annotated[
+        str,
+        Query(pattern="^(UNDER_REVIEW|VERIFICATION_REQUESTED|RESOLVED|DISMISSED)?$"),
+    ] = "",
+):
+    return list_review_events(connection, page, page_size, query.strip(), status)
 
 
 @app.get(

@@ -1,6 +1,6 @@
 # Architecture
 
-Updated 2026-09-25. Distinguish the existing implementation from the intended design.
+Updated 2026-09-26. Distinguish the existing implementation from the intended design.
 
 ## Existing system
 
@@ -8,13 +8,13 @@ Next.js renders a data-readiness Command Centre and a separate authenticated Dat
 
 Standalone CSV inspection and lossless staging cover six supplied reports. PostgreSQL stores original, cleaned and derived records with source identity. Deterministic detector runs/results remain immutable; review transitions are persisted separately as append-only events. Persistence and idempotency are verified against PostgreSQL 17.11. No typed project model or risk aggregation exists. See [ingestion.md](ingestion.md) and [detection-rules.md](detection-rules.md).
 
-The ingestion API exposes only aggregate source metadata. The Next.js Command Centre, Data Quality page and Investigation Queue require a signed local reviewer session; the protected backend workload endpoint also requires the review API key. The Command Centre and Data Quality page share one validated server-side data-overview client and one data-quality presentation component. Search, filtering and a closed set of sort orders execute in PostgreSQL before pagination. The CSV route validates the session before calling the key-protected backend export endpoint and preserves the selected order. Database credentials and the review API key stay server-side. See [deployment readiness](deployment.md) for the private staging boundary and production blockers.
+The ingestion API exposes only aggregate source metadata. The Next.js Command Centre, Investigation Queue and Review Audit Trail require a signed local reviewer session; protected backend review endpoints also require the review API key. Queue and audit search/filtering execute in PostgreSQL before pagination. The CSV route validates the session before calling the key-protected backend export endpoint and preserves the selected order. Database credentials and the review API key stay server-side. See [deployment readiness](deployment.md) for the private staging boundary and production blockers.
 
 ## Implemented frontend design
 
 The supplied Stitch references are reimplemented in the existing Next.js routes. `QueueShell` owns the dark product/session header and light navigation. CSS reflows the evidence view between a wide evidence/review split and a single column. The new `PasswordField` manages visibility locally; `SubmitButton` reads React form pending state without changing the login/review Server Actions. Lucide provides navigation/action icons. All metrics and source comparisons retain the existing API boundary. See [design.md](design.md) for tokens, page ownership and excluded illustrative reference content.
 
-The current Suchak AI identity is shared by `Brand`, page metadata and the authenticated shell. `ReviewOverview` uses the existing investigation summary, without a new analytics endpoint. `LocationComparison` dynamically loads a browser-only Leaflet canvas and local India reference GeoJSON. Only verified source coordinates create A/B markers. The Next.js source route checks the signed session and candidate/source membership before returning a private, no-store record from the existing protected candidate API. The detail payload contains the available provenance, cleaned/derived values, validation and location fields, not an invented project model. Optional OpenStreetMap tiles are browser requests; the default map requires no third-party request. No detector, database schema or review persistence changes are introduced by this map.
+The current Suchak AI identity is shared by `Brand`, page metadata and the authenticated shell. `ReviewOverview` uses the existing investigation summary, without a new analytics endpoint. `LocationComparison` dynamically loads a browser-only Leaflet canvas and local India reference GeoJSON. Only verified source coordinates create A/B markers; selecting another pair automatically refits the map, redraws its line and recalculates separation. The Next.js source route checks the signed session and candidate/source membership before returning a private, no-store record from the existing protected candidate API. The Review Audit Trail reads existing append-only events for the latest reviewable run through a protected, paginated endpoint. Neither view changes detector output or review persistence.
 
 ## Intended design, not implemented
 

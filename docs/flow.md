@@ -1,9 +1,12 @@
 # Application execution flow
 
-<<<<<<< HEAD
-This document describes the implementation that exists in the repository on 2026-09-25. It does not describe planned behaviour as if it were implemented.
+This document describes the implementation that exists in the repository on 2026-09-26. It does not describe planned behaviour as if it were implemented.
 
-All authenticated frontend routes render through `QueueShell`. Its Suchak AI header exposes the implemented Overview, Risk Triage and Source Quality destinations; the desktop operational sidebar exposes the same routes with their product names. Below 70rem the header navigation is removed and the sidebar navigation becomes a full-width route bar. Candidate evidence retains a two-column evidence and reviewer layout on wide screens and stacks it on smaller screens. Authentication, API requests and persistence are unchanged by this presentation layer.
+All authenticated frontend routes render through `QueueShell`. Its Suchak AI header exposes Overview, Risk Triage, Audit Trail and Source Quality; the desktop operational sidebar exposes the same routes with their product names. Below 70rem the header navigation is removed and the sidebar navigation becomes a full-width route bar. Candidate evidence retains a two-column evidence and reviewer layout on wide screens and stacks it on smaller screens.
+
+`/audit-trail` calls the protected `GET /review-events` endpoint through the existing server-only API client. FastAPI selects the latest reviewable detector run, joins its append-only `mplads_review_event` rows to detector evidence, applies parameterised search and target-status filtering, orders newest first and paginates before returning data. The page provides loading, empty, error, filter, mobile-card and pagination states. It is explicitly labelled as administrative review history, not a statutory or cryptographically certified ledger.
+
+Candidate evidence passes its already loaded source records to `LocationComparison`. Selecting Work A or Work B changes the two-record view, clears stale source detail, redraws the verified markers and line, recalculates the Leaflet spherical separation and automatically fits the selected points. Missing or unverified coordinates produce no substitute marker. Marker activation retains the authenticated source-detail flow described below.
 
 On Command Centre, `ReviewerDashboard()` loads the data overview and investigation summary, renders pending review workload and review progress below the page heading, then renders scope, interpretation notice and source-data sections. The workload link opens `/investigation-queue?status=NEW`; the existing queue route applies that filter to its API request. Data Quality continues to render the source-data view without requesting investigation summary. The authenticated reviewer ID and data-service status appear in the shared Suchak AI header.
 
@@ -14,11 +17,6 @@ Data Quality navigation now opens the authenticated `/data-quality` route, rathe
 The 2026-09-13 presentation pass changes no request or persistence path. Existing Command Centre totals now carry an explicit report-row, not unique-project, explanation with the actual source-batch count. Existing evidence and provenance summaries use plain text separators. CSS preserves word-level wrapping for prose, breaks only long identifiers as needed, and aligns the source panel to its content height.
 
 Historical 2026-09-10 behaviour: Data Quality navigation resolved to `#data-quality` on Command Centre. This was replaced by the dedicated route above.
-=======
-The shared Data Quality navigation resolves to the protected `/data-quality` route. `DataQualityPage` checks the reviewer session, calls the shared `getDataOverview()` server client and renders the shared ingestion metrics, source reports, validation review, pipeline state and evidence boundaries. Its own loading, empty, success and service-error states keep the navigation destination meaningful. The Command Centre reuses `DataQualityContent` alongside its investigation summary instead of maintaining a second copy of the data-quality presentation.
-
-The decision to use an in-page `#data-quality` target was superseded after direct user feedback showed that the navigation label was understood as a separate page. The separate route gives the destination its own page heading, URL, active navigation state and retry flow.
->>>>>>> main
 
 ## 2026-09-09: Login failure diagnostics
 
@@ -180,6 +178,13 @@ GET /investigation-summary
 -> latest reviewable run plus latest append-only status
 -> protected aggregate status counts
 
+GET /review-events
+-> require_review_key()
+-> database_connection()
+-> investigations.list_review_events()
+-> latest reviewable run plus append-only review events
+-> server-side search/status filter, newest-first sort and pagination
+
 GET /investigation-candidates
 -> require_review_key()
 -> database_connection()
@@ -250,13 +255,10 @@ Not implemented. No composite risk score is calculated or displayed. Detector se
 
 ## Files changed in the current session
 
-- `frontend/app/command-centre/dashboard.tsx`
-- `frontend/app/investigation-queue/shell.tsx`
-- `frontend/app/globals.css`
-- `frontend/e2e/investigation-queue.spec.ts`
-- `docs/decisions.md`
-- `docs/flow.md`
-- `docs/CODEX_LOG.md`
+- Backend: `backend/src/backend/detectors.py`, `investigations.py`, `main.py` and the corresponding detector/investigation tests.
+- Frontend routes and data client: `frontend/app/audit-trail/`, `frontend/lib/investigations.ts`, the Investigation Queue shell, queue, candidate evidence, comparison/map components and shared CSS.
+- Browser verification: `frontend/e2e/mock-api.mjs`, `investigation-queue.spec.ts`, `location-comparison.spec.ts` and `responsiveness.spec.ts`.
+- Documentation: PRD, architecture, design, feature connections, technology stack, decisions, execution flow and session log.
 
 The earlier implementation inventory follows for historical context:
 

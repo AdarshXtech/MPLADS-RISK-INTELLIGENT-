@@ -19,6 +19,7 @@ from backend.investigations import (
     export_candidates,
     investigation_summary,
     list_candidates,
+    list_review_events,
 )
 from backend.locations import DDL as LOCATION_DDL
 
@@ -154,6 +155,24 @@ def test_summary_is_derived_from_latest_append_only_status(investigation_connect
     assert reviewed.total_candidates == 2
     assert reviewed.new == 1
     assert reviewed.under_review == 1
+
+
+def test_audit_trail_lists_and_filters_append_only_events(investigation_connection):
+    connection, result_id = investigation_connection
+    assert list_review_events(connection, 1, 20).total == 0
+    add_review_event(
+        connection,
+        result_id,
+        ReviewEventCreate(expected_status="NEW", target_status="UNDER_REVIEW"),
+        "synthetic-reviewer",
+    )
+    page = list_review_events(connection, 1, 20, "community hall", "UNDER_REVIEW")
+    assert page.total == 1
+    assert page.items[0].result_id == result_id
+    assert page.items[0].work_description == "Synthetic community hall"
+    assert page.items[0].reviewer == "synthetic-reviewer"
+    assert list_review_events(connection, 1, 20, "missing", "").total == 0
+    assert list_review_events(connection, 1, 20, "", "RESOLVED").total == 0
 
 
 def test_review_history_is_append_only(investigation_connection):

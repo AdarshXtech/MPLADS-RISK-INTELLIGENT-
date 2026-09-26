@@ -1,6 +1,18 @@
 # Technical decisions
 
-<<<<<<< HEAD
+## 2026-09-26: Expose the real review audit trail and auto-fit duplicate pairs
+
+- **Decision:** Add an authenticated, paginated Review Audit Trail over the existing append-only review events, and extend the existing Leaflet comparison so each selected A/B pair is fitted automatically and carries a labelled connecting line and calculated distance.
+- **Problem:** The supplied ledger screen had no truthful production route, while the existing map required a manual Fit locations action even though pair changes were already supported. Copying the prototype ledger would fabricate statutory, financial and cryptographic claims.
+- **Alternatives considered:** Keep audit history only inside each candidate, copy the prototype as static UI, add a new audit table, or introduce a second mapping library. Candidate-only history does not provide the requested cross-candidate screen; the other options duplicate data or dependencies.
+- **Selected approach and reason:** Read the latest reviewable run's existing `mplads_review_event` rows through a key-protected `/review-events` endpoint with server-side search, status filtering and pagination. Render them in a protected Next.js route. Reuse the existing source payload and Leaflet engine for A/B details, marker tooltips, automatic bounds, the line and spherical distance. No detection result or review record is changed by either view.
+- **Library selection and reason:** Not applicable. Existing FastAPI, Psycopg, Next.js, Lucide and Leaflet capabilities are sufficient.
+- **Trade-offs:** The audit route is an administrative review history, not a statutory or cryptographically certified ledger. It is limited to the latest reviewable detector run so every row can link to the current evidence route. Exact map pins still require `VERIFIED_COORDINATES`; missing coordinates remain unavailable.
+- **Performance impact:** Both audit count and page data execute in PostgreSQL before a maximum 100-row response. Leaflet remains deferred to the evidence page, and only the selected pair is rendered.
+- **Maintainability impact:** One small backend query, one route and existing shared shell/styles are reused. The existing database schema and detector contract remain intact.
+- **Security impact:** The endpoint retains the review API key boundary, the page retains signed-session protection and no credentials reach the browser. The map tooltip uses DOM text content, not source-provided HTML.
+- **Affected files:** Backend investigation query/API/tests; frontend audit route, investigations client, shared shell/CSS, candidate comparison/map, mock API and browser tests; PRD, architecture, design, feature, flow and session documentation.
+
 ## 2026-09-25: Use one Suchak AI shell across all implemented frontend routes
 
 - **Decision:** Reimplement the supplied Stitch visual system as one shared Suchak AI workspace shell for sign-in, Command Centre, Investigation Queue, candidate evidence and Data Quality.
@@ -8,7 +20,7 @@
 - **Alternatives:** Copy each exported HTML screen as an independent page, preserve the mixed interfaces, or apply only a colour change. Independent copies would duplicate navigation and introduce mock controls and figures that are not backed by the product.
 - **Selected approach:** Use the supplied dark identity header, compact operational navigation, dense evidence modules, semantic status colours and restrained geometry. Map them only to existing working routes and source-backed values. Keep the two-point India map and on-click source retrieval in the evidence workflow.
 - **Library selection:** Not applicable. Existing Next.js, Lucide and Leaflet components are retained.
-- **Trade-offs:** The product does not display Stitch-only Audit Ledger, global search, clearance or enforcement controls because those workflows are not implemented. Styling is added as an override layer to preserve existing tested component behaviour.
+- **Trade-offs:** The product does not display Stitch-only global search, clearance or enforcement controls because those workflows are not implemented. The later 2026-09-26 decision adds a truthful review-event audit route without adopting the prototype's statutory claims.
 - **Performance impact:** No new dependency, client bundle or remote asset was added.
 - **Maintainability impact:** All authenticated pages use `QueueShell`; responsive layout tokens remain centralised in `globals.css`.
 - **Security impact:** Authentication and server actions are unchanged. Reviewer identifiers are visually truncated without altering their full stored value.
@@ -104,21 +116,6 @@
 - **Maintainability impact:** Reuses established styles and keeps report-grain clarification adjacent to the totals it explains.
 - **Security impact:** None. Authentication, API keys, risk logic and database access are unchanged.
 - **Affected files:** `frontend/app/globals.css`, `frontend/app/command-centre/page.tsx`, `frontend/app/investigation-queue/page.tsx`, `frontend/app/investigation-queue/[id]/page.tsx`, `frontend/e2e/investigation-queue.spec.ts`, `docs/responsive-ui.md`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
-=======
-## 2026-09-10: Open Data Quality as a dedicated route
-
-- **Problem:** The sidebar label presented Data Quality as a primary destination, but its link only changed the Command Centre URL to `#data-quality`. Direct user feedback showed that this appeared not to open a page, and the Command Centre remained marked as active.
-- **Decision:** Add a protected `/data-quality` page with its own heading, active navigation state, loading, empty, success, service-error and retry behaviour. Share the validated data-overview client and data-quality presentation with the Command Centre.
-- **Change to earlier decision:** This supersedes the 2026-09-10 decision to keep Data Quality as an in-page anchor. The earlier solution made the fragment valid in all states, but it did not satisfy the navigation label's page-level meaning.
-- **Alternatives considered:** Keep the anchor and add stronger scroll highlighting, or rename the navigation control to describe an in-page section. Both retain an interaction that users already found misleading.
-- **Selected approach and reason:** Use a normal Next.js server-rendered route. It gives the destination a stable URL, page heading and `aria-current` state while reusing existing source-backed content.
-- **Library selection and reason:** Not applicable. Existing Next.js routing, React components and Playwright cover the change.
-- **Trade-offs:** Moving between the Command Centre and Data Quality can request the aggregate overview again. This keeps each route independently recoverable and avoids client-side state or a new cache policy without evidence that one is needed.
-- **Performance impact:** Data Quality requests only `GET /data-overview`; it does not request the investigation summary. The response remains aggregate source metadata rather than raw records.
-- **Maintainability impact:** `lib/data-overview.ts` owns validation and fetching, and `DataQualityContent` owns the shared presentation. Browser tests assert the route, heading, active navigation and responsive states.
-- **Security impact:** The route calls `requireReviewer()` before rendering. Database credentials remain in FastAPI and no additional backend endpoint or browser-visible secret was introduced.
-- **Affected files:** `frontend/lib/data-overview.ts`, `frontend/app/data-quality/*`, Command Centre, shared shell, browser tests, PRD, architecture, feature connections, flow, decisions and CODEX_LOG.
->>>>>>> main
 
 ## 2026-09-10: Keep Data Quality navigation valid in service-empty and error states
 

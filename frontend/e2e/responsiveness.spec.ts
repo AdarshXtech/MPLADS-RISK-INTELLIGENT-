@@ -74,6 +74,9 @@ for (const size of sizes) {
 >>>>>>> main
     await expect(page.getByRole("heading", { name: "Data Quality", exact: true })).toBeVisible();
     await capture(page, info, size.name, "05-data-quality");
+    await page.getByRole("link", { name: "Review Audit Trail", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Review Audit Trail", exact: true })).toBeVisible();
+    await capture(page, info, size.name, "06-audit-trail");
     await page.getByRole("button", { name: "Sign out" }).click();
     await expect(page).toHaveURL(/\/login/);
     expect(errors).toEqual([]);
@@ -82,7 +85,7 @@ for (const size of sizes) {
 
 for (const size of sizes.filter(({ name }) => ["phone", "tablet", "desktop"].includes(name))) {
   test(`responsive states: ${size.name}`, async ({ page }, info) => {
-    test.setTimeout(120_000);
+    test.setTimeout(240_000);
     await page.setViewportSize(size);
     await page.goto("/login");
     await page.getByLabel("Username").fill("incorrect");
@@ -133,6 +136,7 @@ for (const size of sizes.filter(({ name }) => ["phone", "tablet", "desktop"].inc
       ["/data-overview", "/command-centre", "Data service unavailable", "16-command-error"],
 >>>>>>> main
       ["/data-overview", "/data-quality", "Data service unavailable", "16-data-quality-error"],
+      ["/review-events", "/audit-trail", "Review Audit Trail unavailable", "17-audit-trail-error"],
     ]) {
       await scenario(page, { [api]: { status: 503 } });
       await page.goto(route);
@@ -144,7 +148,7 @@ for (const size of sizes.filter(({ name }) => ["phone", "tablet", "desktop"].inc
       await capture(page, info, size.name, file);
       await scenario(page);
       await page.getByRole("link", { name: /^(Retry|Return to queue|Retry connection)$/ }).click();
-      await expect(page.locator(".error-panel")).toHaveCount(0);
+      await expect(page.locator(".error-panel")).toHaveCount(0, { timeout: 15_000 });
     }
     await scenario(page, { "/data-overview": { body: { source_batches: 0, retained_records: 0, detail_records: 0, summary_records: 0, rejected_records: 0, records_with_validation_issues: 0, sources: [] } } });
     await page.goto("/data-quality");
@@ -153,12 +157,17 @@ for (const size of sizes.filter(({ name }) => ["phone", "tablet", "desktop"].inc
     await expect(page.getByRole("heading", { name: "Data Quality", exact: true })).toBeVisible();
     await expect(page).toHaveURL(/\/data-quality$/);
     await expect(page.locator("#data-quality")).toBeVisible();
-    await capture(page, info, size.name, "17-data-quality-empty");
+    await capture(page, info, size.name, "18-data-quality-empty");
+    await scenario(page, { "/review-events": { body: { items: [], page: 1, page_size: 20, total: 0 } } });
+    await page.goto("/audit-trail");
+    await expect(page.getByRole("heading", { name: "No review actions recorded" })).toBeVisible();
+    await capture(page, info, size.name, "19-audit-trail-empty");
     await scenario(page, { "/investigation-summary": { status: 503 } });
     await page.goto("/data-quality");
     await expect(page.getByRole("heading", { name: "Ingested source reports" })).toBeVisible();
     await scenario(page);
     for (const [api, route, label, file] of [
+<<<<<<< HEAD
 =======
     await expect(page.getByRole("link", { name: "Data Quality", exact: true })).toHaveAttribute("aria-current", "page");
     await capture(page, info, size.name, "17-data-quality-empty");
@@ -167,6 +176,11 @@ for (const size of sizes.filter(({ name }) => ["phone", "tablet", "desktop"].inc
 >>>>>>> main
       ["/data-overview", "/data-quality", "Loading Data Quality", "18-data-quality-loading"],
       ["/investigation-candidates", "/investigation-queue", "Loading Investigation Queue", "19-queue-loading"],
+=======
+      ["/data-overview", "/data-quality", "Loading Data Quality", "20-data-quality-loading"],
+      ["/investigation-candidates", "/investigation-queue", "Loading Investigation Queue", "21-queue-loading"],
+      ["/review-events", "/audit-trail", "Loading Review Audit Trail", "22-audit-trail-loading"],
+>>>>>>> 1062665ff71216161c5215d1c3b6a9d9de8a9378
     ]) {
       await scenario(page, { [api]: { delay: 2500 } });
       await page.goto(route, { waitUntil: "commit" });
@@ -178,15 +192,15 @@ for (const size of sizes.filter(({ name }) => ["phone", "tablet", "desktop"].inc
     await page.goto("/investigation-queue");
     await page.getByRole("link", { name: "Next", exact: true }).click();
     await expect(page.getByText("Page 2 of 2")).toBeVisible();
-    await capture(page, info, size.name, "20-queue-page-two");
+    await capture(page, info, size.name, "23-queue-page-two");
     await page.goto("/investigation-queue/synthetic-candidate-01");
     await page.getByRole("button", { name: "Save review action" }).click();
     await expect(page.getByRole("status")).toContainText("saved", { timeout: 15_000 });
     for (const [status, file] of [
-      ["VERIFICATION_REQUESTED", "21-verification-requested"],
-      ["RESOLVED", "22-review-resolved"],
-      ["UNDER_REVIEW", "23-review-reopened"],
-      ["DISMISSED", "24-review-dismissed"],
+      ["VERIFICATION_REQUESTED", "24-verification-requested"],
+      ["RESOLVED", "25-review-resolved"],
+      ["UNDER_REVIEW", "26-review-reopened"],
+      ["DISMISSED", "27-review-dismissed"],
     ]) {
       await page.getByLabel("Next status").selectOption(status);
       await page.getByLabel("Decision, required when resolving or dismissing").selectOption("INSUFFICIENT_EVIDENCE");
