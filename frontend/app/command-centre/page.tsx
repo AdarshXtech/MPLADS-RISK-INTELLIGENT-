@@ -1,12 +1,4 @@
 import type { Metadata } from "next";
-<<<<<<< HEAD
-import { ReviewerDashboard } from "./dashboard";
-
-export const metadata: Metadata = { title: "Command Centre" };
-
-export default function CommandCentrePage() {
-  return <ReviewerDashboard view="command-centre" />;
-=======
 import Link from "next/link";
 import { requireReviewer } from "@/lib/auth";
 import { getDataOverview, type DataOverview } from "@/lib/data-overview";
@@ -104,5 +96,4 @@ export default async function CommandCentrePage() {
       </main>
     </QueueShell>
   );
->>>>>>> main
 }

@@ -1,12 +1,4 @@
 import type { Metadata } from "next";
-<<<<<<< HEAD
-import { ReviewerDashboard } from "../command-centre/dashboard";
-
-export const metadata: Metadata = { title: "Data Quality" };
-
-export default function DataQualityPage() {
-  return <ReviewerDashboard view="data-quality" />;
-=======
 import Link from "next/link";
 import { requireReviewer } from "@/lib/auth";
 import { getDataOverview } from "@/lib/data-overview";
@@ -44,5 +36,4 @@ export default async function DataQualityPage() {
       </main>
     </QueueShell>
   );
->>>>>>> main
 }

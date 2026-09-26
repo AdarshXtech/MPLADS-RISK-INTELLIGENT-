@@ -27,15 +27,9 @@ export function QueueShell({ username, children, active = "investigation-queue",
         <div className="workspace-brand"><ShieldCheck size={24} aria-hidden="true" /><div><strong>Suchak AI Intelligence</strong><p>MPLADS administrative review</p></div></div>
         <p className="nav-section-label">Operational views</p>
         <nav className="primary-nav" aria-label="Primary navigation">
-<<<<<<< HEAD
           <Link className="nav-link" href="/command-centre" aria-current={active === "command-centre" ? "page" : undefined}><LayoutDashboard size={18} aria-hidden="true" /><span>Command Centre</span></Link>
           <Link className="nav-link" href="/investigation-queue" aria-current={active === "investigation-queue" ? "page" : undefined}><Radar size={18} aria-hidden="true" /><span>Investigation Queue</span></Link>
           <Link className="nav-link" href="/data-quality" aria-current={active === "data-quality" ? "page" : undefined}><Database size={18} aria-hidden="true" /><span>Data Quality</span></Link>
-=======
-          <Link className="nav-link" href="/command-centre" aria-current={active === "command-centre" ? "page" : undefined}>Command Centre</Link>
-          <Link className="nav-link" href="/investigation-queue" aria-current={active === "investigation-queue" ? "page" : undefined}>Investigation Queue</Link>
-          <Link className="nav-link" href="/data-quality" aria-current={active === "data-quality" ? "page" : undefined}>Data Quality</Link>
->>>>>>> main
         </nav>
         <div className="session-status"><ShieldCheck size={18} aria-hidden="true" /><div><strong>Evidence-led review</strong><p>Screening indicators require verification against source records.</p></div></div>
       </aside>
