@@ -68,7 +68,10 @@ for (const size of sizes) {
     await expect(page.getByRole("heading", { name: "Investigation workload" })).toBeVisible();
     await capture(page, info, size.name, "05-command-centre");
     await page.getByRole("link", { name: "Data Quality", exact: true }).click();
+<<<<<<< HEAD
     await expect(page).toHaveURL(/\/data-quality$/);
+=======
+>>>>>>> main
     await expect(page.getByRole("heading", { name: "Data Quality", exact: true })).toBeVisible();
     await capture(page, info, size.name, "05-data-quality");
     await page.getByRole("button", { name: "Sign out" }).click();
@@ -125,12 +128,19 @@ for (const size of sizes.filter(({ name }) => ["phone", "tablet", "desktop"].inc
     for (const [api, route, heading, file] of [
       ["/investigation-candidates", "/investigation-queue", "Investigation Queue unavailable", "14-queue-error"],
       ["/investigation-candidates/synthetic-candidate-01", "/investigation-queue/synthetic-candidate-01", "Candidate unavailable", "15-evidence-error"],
+<<<<<<< HEAD
+=======
+      ["/data-overview", "/command-centre", "Data service unavailable", "16-command-error"],
+>>>>>>> main
       ["/data-overview", "/data-quality", "Data service unavailable", "16-data-quality-error"],
     ]) {
       await scenario(page, { [api]: { status: 503 } });
       await page.goto(route);
       await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
+<<<<<<< HEAD
       if (route === "/data-quality") await expect(page.getByRole("heading", { name: "Data Quality", exact: true })).toBeVisible();
+=======
+>>>>>>> main
       await capture(page, info, size.name, file);
       await scenario(page);
       await page.getByRole("link", { name: /^(Retry|Return to queue|Retry connection)$/ }).click();
@@ -139,6 +149,7 @@ for (const size of sizes.filter(({ name }) => ["phone", "tablet", "desktop"].inc
     await scenario(page, { "/data-overview": { body: { source_batches: 0, retained_records: 0, detail_records: 0, summary_records: 0, rejected_records: 0, records_with_validation_issues: 0, sources: [] } } });
     await page.goto("/data-quality");
     await expect(page.getByRole("heading", { name: "No staged source reports" })).toBeVisible();
+<<<<<<< HEAD
     await expect(page.getByRole("heading", { name: "Data Quality", exact: true })).toBeVisible();
     await expect(page).toHaveURL(/\/data-quality$/);
     await expect(page.locator("#data-quality")).toBeVisible();
@@ -148,6 +159,12 @@ for (const size of sizes.filter(({ name }) => ["phone", "tablet", "desktop"].inc
     await expect(page.getByRole("heading", { name: "Ingested source reports" })).toBeVisible();
     await scenario(page);
     for (const [api, route, label, file] of [
+=======
+    await expect(page.getByRole("link", { name: "Data Quality", exact: true })).toHaveAttribute("aria-current", "page");
+    await capture(page, info, size.name, "17-data-quality-empty");
+    for (const [api, route, label, file] of [
+      ["/data-overview", "/command-centre", "Loading command centre", "18-command-loading"],
+>>>>>>> main
       ["/data-overview", "/data-quality", "Loading Data Quality", "18-data-quality-loading"],
       ["/investigation-candidates", "/investigation-queue", "Loading Investigation Queue", "19-queue-loading"],
     ]) {

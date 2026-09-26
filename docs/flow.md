@@ -1,5 +1,6 @@
 # Application execution flow
 
+<<<<<<< HEAD
 This document describes the implementation that exists in the repository on 2026-09-25. It does not describe planned behaviour as if it were implemented.
 
 All authenticated frontend routes render through `QueueShell`. Its Suchak AI header exposes the implemented Overview, Risk Triage and Source Quality destinations; the desktop operational sidebar exposes the same routes with their product names. Below 70rem the header navigation is removed and the sidebar navigation becomes a full-width route bar. Candidate evidence retains a two-column evidence and reviewer layout on wide screens and stacks it on smaller screens. Authentication, API requests and persistence are unchanged by this presentation layer.
@@ -13,6 +14,11 @@ Data Quality navigation now opens the authenticated `/data-quality` route, rathe
 The 2026-09-13 presentation pass changes no request or persistence path. Existing Command Centre totals now carry an explicit report-row, not unique-project, explanation with the actual source-batch count. Existing evidence and provenance summaries use plain text separators. CSS preserves word-level wrapping for prose, breaks only long identifiers as needed, and aligns the source panel to its content height.
 
 Historical 2026-09-10 behaviour: Data Quality navigation resolved to `#data-quality` on Command Centre. This was replaced by the dedicated route above.
+=======
+The shared Data Quality navigation resolves to the protected `/data-quality` route. `DataQualityPage` checks the reviewer session, calls the shared `getDataOverview()` server client and renders the shared ingestion metrics, source reports, validation review, pipeline state and evidence boundaries. Its own loading, empty, success and service-error states keep the navigation destination meaningful. The Command Centre reuses `DataQualityContent` alongside its investigation summary instead of maintaining a second copy of the data-quality presentation.
+
+The decision to use an in-page `#data-quality` target was superseded after direct user feedback showed that the navigation label was understood as a separate page. The separate route gives the destination its own page heading, URL, active navigation state and retry flow.
+>>>>>>> main
 
 ## 2026-09-09: Login failure diagnostics
 

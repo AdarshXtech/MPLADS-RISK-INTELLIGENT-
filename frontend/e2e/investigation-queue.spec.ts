@@ -76,8 +76,11 @@ test("reviewer can filter, paginate, inspect evidence and save an action", async
   await page.getByRole("link", { name: "Data Quality" }).click();
   await expect(page).toHaveURL(/\/data-quality$/);
   await expect(page.getByRole("heading", { name: "Data Quality", exact: true })).toBeVisible();
+<<<<<<< HEAD
   await expect(page.getByRole("link", { name: "Data Quality" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("heading", { name: "Ingested source reports" })).toBeVisible();
+=======
+>>>>>>> main
 });
 
 test("filtered CSV downloads all pages and reports failures without leaving the queue", async ({ page }) => {
