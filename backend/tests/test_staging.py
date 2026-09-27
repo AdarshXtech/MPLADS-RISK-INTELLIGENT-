@@ -45,6 +45,34 @@ def test_parameterised_staging_and_idempotency():
     cursor.executemany.assert_not_called()
 
 
+def test_staging_writes_records_in_bounded_chunks():
+    report, records = batch()
+    records = [
+        {
+            **records[0],
+            "record_number": number,
+            "line_start": number + 1,
+            "line_end": number + 1,
+        }
+        for number in range(1, 6)
+    ]
+    conn = MagicMock()
+    cursor = conn.cursor.return_value.__enter__.return_value
+    cursor.fetchone.return_value = (report["sha256"],)
+
+    assert stage(conn, report, records, chunk_size=2)
+
+    calls = cursor.executemany.call_args_list
+    assert [len(call.args[1]) for call in calls] == [2, 2, 1]
+    assert [row[2] for call in calls for row in call.args[1]] == [1, 2, 3, 4, 5]
+
+
+def test_staging_rejects_invalid_chunk_size():
+    report, records = batch()
+    with pytest.raises(ValueError, match="positive integer"):
+        stage(MagicMock(), report, records, chunk_size=0)
+
+
 def test_existing_batch_conflict_is_not_overwritten():
     report, records = batch()
     conn = MagicMock()
@@ -62,6 +90,15 @@ def test_postgres_round_trip_idempotency_and_rollback():
     import psycopg
 
     report, records = batch()
+    records = [
+        {
+            **records[0],
+            "record_number": number,
+            "line_start": number + 1,
+            "line_end": number + 1,
+        }
+        for number in range(1, 6)
+    ]
     schema = "test_ingest_" + uuid4().hex
     from psycopg import sql
 
@@ -74,12 +111,15 @@ def test_postgres_round_trip_idempotency_and_rollback():
                 sql.SQL("SET LOCAL search_path TO {}").format(sql.Identifier(schema))
             )
             conn.execute(DDL)
-            assert stage(conn, report, records)
-            assert not stage(conn, report, records)
+            assert stage(conn, report, records, chunk_size=2)
+            assert not stage(conn, report, records, chunk_size=2)
             actual = conn.execute(
-                "SELECT original_values, cleaned_values FROM mplads_source_record"
-            ).fetchone()
-            assert actual == (["10.25"], {"amount": "10.25"})
+                "SELECT record_number, original_values, cleaned_values "
+                "FROM mplads_source_record ORDER BY record_number"
+            ).fetchall()
+            assert actual == [
+                (number, ["10.25"], {"amount": "10.25"}) for number in range(1, 6)
+            ]
             failed_report, _ = batch()
             with pytest.raises(psycopg.errors.UniqueViolation), conn.transaction():
                 stage(conn, failed_report, records + records)

@@ -66,6 +66,8 @@ uv run --frozen python -m backend.staging "../data/raw/Works Sanctioned.csv"
 
 The local tables already exist. Use `--create-tables` only during authorised initialisation with a role that has schema CREATE. It creates `mplads_ingest_batch` and `mplads_source_record` if absent. Batch identity is source SHA-256 plus parser version; record identity additionally includes the source record ordinal. Original/cleaned/derived/issues data occupies separate JSONB columns. JSON monetary strings retain precision. This is lossless staging, not a typed analytics model.
 
+Record inserts are sent to PostgreSQL in bounded groups of 5,000 by default. Use `--chunk-size N` to select another positive size for a constrained environment. Chunking limits temporary insert-parameter memory; parsing and report profiling still retain the current source file in memory. All chunks remain inside one transaction, so any failed chunk rolls back the complete source batch. Detector grouping runs after staging across the complete sanctioned dataset, not independently per chunk.
+
 The connection transaction commits the whole batch or rolls back on failure. An existing identical batch is checked by metadata and row count and is not reinserted. Inconsistent batches are refused. There is no UPDATE, DELETE, DROP or reset operation. Error messages do not print driver connection details.
 
 Routine permissions: database CONNECT, schema USAGE, table SELECT and INSERT. Initial creation additionally needs schema CREATE. Use a dedicated project database and remove creation privilege for routine imports.

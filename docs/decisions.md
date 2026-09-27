@@ -1,5 +1,18 @@
 # Technical decisions
 
+## 2026-09-28: Reuse PostgreSQL connections in the FastAPI backend
+
+- **Decision:** Add a small Psycopg connection pool to the FastAPI lifespan and keep the existing per-request database dependency as the only SQL entry point.
+- **Problem:** Render free-tier cold starts are still unavoidable, but the backend also opened a new PostgreSQL connection for every API request. With a hosted database this adds avoidable latency to Command Centre, Data Quality and investigation pages after the service is already awake.
+- **Alternatives considered:** Move immediately to DigitalOcean, add a cache, rewrite query functions around an ORM session layer, or keep direct `psycopg.connect()` per request. Platform migration is larger than needed for the first optimisation; caching risks stale review state; the ORM layer would add no value here.
+- **Selected approach and reason:** Use `psycopg_pool.ConnectionPool` with one minimum and four maximum connections. FastAPI opens the pool during lifespan startup and closes it on shutdown. If a test calls the dependency without lifespan, the previous direct connection fallback remains.
+- **Library selection and reason:** Extend the existing Psycopg dependency with its official `pool` extra. No unrelated backend library is added.
+- **Trade-offs:** This does not remove Render free-plan cold starts or slow queries. It keeps a small number of database connections open while the backend is alive, so Neon/Render connection limits still matter.
+- **Performance impact:** Repeated API calls avoid PostgreSQL connection setup after startup. The first request after a cold start may still wait for service and database wake-up.
+- **Maintainability impact:** Existing query functions and route contracts are unchanged. Pool configuration is centralised in `backend.main`.
+- **Security impact:** Credential handling remains environment-variable based. No database URL or secret is logged.
+- **Affected files:** `backend/src/backend/main.py`, `backend/tests/test_main.py`, `backend/pyproject.toml`, `backend/uv.lock`, `docs/techstack.md`, `docs/architecture.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+
 ## 2026-09-26: Expose the real review audit trail and auto-fit duplicate pairs
 
 - **Decision:** Add an authenticated, paginated Review Audit Trail over the existing append-only review events, and extend the existing Leaflet comparison so each selected A/B pair is fitted automatically and carries a labelled connecting line and calculated distance.
@@ -64,7 +77,18 @@
 - **Maintainability impact:** Shared CSS tokens and shell provide consistent screens; existing route names, field labels and API contracts remain intact.
 - **Security impact:** No reference credentials or scripts are copied. Existing signed sessions, protected server calls and append-only review actions are preserved. The header displays unavailable state when candidate loading fails.
 - **Affected files:** Shared CSS/shell, login page/password field, submission component, queue/export/evidence components, frontend manifest/lock, browser tests, design/architecture/flow/technology/responsiveness/feature/decision/session documents.
+## 2026-09-24: Bound PostgreSQL staging insert batches
 
+- **Status:** Implemented.
+- **Decision:** Send source records to PostgreSQL in chunks of 5,000 by default, with a positive `--chunk-size` override. Retain one transaction for the complete source batch and run detection over the complete staged dataset.
+- **Problem:** Staging previously built one second full-size list of Psycopg insert parameters and submitted every source record through one `executemany` call. This created avoidable peak memory use and made the write size inflexible.
+- **Alternatives considered:** Rewrite the parser as a streaming two-pass pipeline, commit each chunk independently, or split duplicate detection by chunk. The first is unnecessary for the current 141,717 retained rows; the latter choices would weaken atomicity or miss matches across chunk boundaries.
+- **Selected approach and libraries:** Use Python 3.12 standard-library `itertools.batched` around the existing parameterised Psycopg insert. No dependency was added.
+- **Trade-offs:** Insert-parameter memory is bounded, but `inspect_csv()` still retains the source bytes, records and report profile in memory. One failed chunk rolls back prior chunks, preserving the lossless batch contract.
+- **Performance impact:** Peak temporary insert allocation is limited to the configured chunk size. The number of database round trips increases from one record `executemany` call to approximately records divided by chunk size.
+- **Maintainability impact:** One constant and one CLI option control the behaviour; existing staging and detector contracts are unchanged.
+- **Security impact:** Parameterised SQL, credential handling and database privileges are unchanged.
+- **Affected files:** `backend/src/backend/staging.py`, `backend/tests/test_staging.py`, `docs/ingestion.md`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
 ## 2026-09-14: Put pending review work first on Command Centre
 
 - **Status:** Implemented.

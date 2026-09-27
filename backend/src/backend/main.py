@@ -1,12 +1,14 @@
 import hmac
 import os
 from collections.abc import Iterator
+from contextlib import asynccontextmanager
 from typing import Annotated
 
 import psycopg
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.responses import Response
 from fastapi.security import APIKeyHeader
+from psycopg_pool import ConnectionPool, PoolClosed, PoolTimeout, TooManyRequests
 from pydantic import BaseModel
 
 from backend.investigations import (
@@ -24,12 +26,52 @@ from backend.investigations import (
     list_review_events,
 )
 
+DB_CONNECT_TIMEOUT = 5
+DB_POOL_MIN_SIZE = 1
+DB_POOL_MAX_SIZE = 4
+connection_pool: ConnectionPool | None = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    configure_database_pool()
+    try:
+        yield
+    finally:
+        close_database_pool()
+
+
 app = FastAPI(
     title="MPLADS Risk Intelligence API",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 review_key_header = APIKeyHeader(name="X-MPLADS-Review-Key", auto_error=False)
+
+
+def configure_database_pool() -> None:
+    global connection_pool
+    database_url = os.environ.get("DATABASE_URL")
+    if not database_url or connection_pool is not None:
+        return
+    connection_pool = ConnectionPool(
+        database_url,
+        min_size=DB_POOL_MIN_SIZE,
+        max_size=DB_POOL_MAX_SIZE,
+        timeout=DB_CONNECT_TIMEOUT,
+        kwargs={"connect_timeout": DB_CONNECT_TIMEOUT},
+        open=False,
+    )
+    connection_pool.open(wait=False)
+
+
+def close_database_pool() -> None:
+    global connection_pool
+    if connection_pool is None:
+        return
+    connection_pool.close()
+    connection_pool = None
 
 
 def require_review_key(key: Annotated[str | None, Depends(review_key_header)]) -> None:
@@ -80,11 +122,23 @@ ORDER BY b.source_file
 
 
 def database_connection() -> Iterator[psycopg.Connection]:
+    if connection_pool is not None:
+        try:
+            with connection_pool.connection() as connection:
+                yield connection
+            return
+        except (psycopg.Error, PoolClosed, PoolTimeout, TooManyRequests):
+            raise HTTPException(
+                status_code=503, detail="Data service is unavailable"
+            ) from None
+
     database_url = os.environ.get("DATABASE_URL")
     if not database_url:
         raise HTTPException(status_code=503, detail="Data service is not configured")
     try:
-        with psycopg.connect(database_url, connect_timeout=5) as connection:
+        with psycopg.connect(
+            database_url, connect_timeout=DB_CONNECT_TIMEOUT
+        ) as connection:
             yield connection
     except psycopg.Error:
         raise HTTPException(

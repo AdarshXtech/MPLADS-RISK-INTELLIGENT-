@@ -1,5 +1,14 @@
 # Codex log
 
+## 2026-09-28: Pool backend PostgreSQL connections for Render latency
+
+- **Task:** Improve the FastAPI backend before considering a move from Render to DigitalOcean.
+- **Files created:** None.
+- **Files modified:** `backend/src/backend/main.py`, `backend/tests/test_main.py`, `backend/pyproject.toml`, `backend/uv.lock`, `docs/techstack.md`, `docs/architecture.md`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+- **Implementation:** Added the official Psycopg pool extra and a small FastAPI lifespan-managed `ConnectionPool` with one minimum and four maximum connections. The existing `database_connection()` dependency now checks out a pooled connection when the ASGI app is running, while retaining the previous direct connection fallback for focused tests outside lifespan.
+- **Decision boundary:** This reduces repeated PostgreSQL connection setup after the Render service is awake. It does not remove Render free-plan cold starts, change detector logic, alter schema or cache review data.
+- **Verification:** Ruff format and lint passed. Backend tests passed with the local PostgreSQL-only cases skipped because the test database was not reachable in this shell: 53 passed, 15 skipped. `git diff --check` passed with only Git line-ending notices.
+
 ## 2026-09-26: Complete source-backed audit and duplicate comparison screens
 
 - **Task:** Reinspect the repository and seven supplied Stitch archives, preserve the existing working application and complete the missing real audit screen and automatic duplicate-pair map behaviour.
@@ -59,7 +68,14 @@
 - **Verification:** ESLint passed after the final edits. Playwright's production build passed. All 51 browser tests passed across Chromium, Firefox and WebKit, covering eight widths from 320 to 1920 pixels, long-value reflow, keyboard access, filters, pagination, CSV, source evidence, review transitions and unavailable/empty/loading states. After screenshot review prompted the distance-display correction, rebuilt and reran the six focused UI tests across all three browsers; all passed, including zero/missing distance, pending-save prevention and responsive rail placement. The normal route tests recorded no browser page errors. Visually inspected desktop evidence, Command Centre and sign-in, plus phone sign-in/queue and tablet evidence. Initial browser execution was blocked by sandbox subprocess restrictions and then missing browser binaries; installed the required Playwright browsers and completed the tests outside the sandbox.
 - **Preview:** Started the Next.js development server at `http://127.0.0.1:3000/login`. The sign-in route returned HTTP 200 with the new password control; the development error log was empty.
 - **Limitations:** Browser checks use labelled synthetic fixtures and do not certify native 200% zoom, physical devices or every WCAG criterion. Backend tests were not rerun because this session changes presentation and browser tests, not backend logic. No reviewer environment variables or local environment file are configured in this workspace, so live sign-in/data review requires the existing credentials and backend setup. No official review event was written, and no commit, push or deployment was performed.
+## 2026-09-24: Chunk PostgreSQL staging writes
 
+- **Task:** Add safe chunking to source-data staging without missing potential duplicates across chunk boundaries.
+- **Files created:** None.
+- **Files modified:** `backend/src/backend/staging.py`, `backend/tests/test_staging.py`, `docs/ingestion.md`, `docs/decisions.md`, `docs/flow.md`, `docs/CODEX_LOG.md`.
+- **Implementation:** Reused the existing parser, transaction and parameterised inserts. PostgreSQL record writes now use Python 3.12 `itertools.batched` with a 5,000-record default and a validated `--chunk-size` override. Chunks do not commit separately, and detector grouping remains global after staging.
+- **Known limitation:** Parsing, profiling and the active detector still materialise their current inputs in memory. This change bounds only the temporary database insert parameters; full streaming is deferred until measured source size or memory pressure requires it.
+- **Verification:** Ruff formatting and lint passed. All five staging tests passed against the project-local PostgreSQL service, including a real five-record import with chunk size two, idempotent rerun and transaction rollback. The complete backend suite passed 58 tests. `git diff --check` passed with only Git's existing line-ending notices.
 ## 2026-09-17: Fix cross-browser frontend CI assertion
 
 - **Task:** Diagnose and fix the failed frontend CI run for commit `530e31e`.

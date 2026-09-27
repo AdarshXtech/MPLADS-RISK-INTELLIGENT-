@@ -2,9 +2,15 @@
 
 import argparse
 import os
+from itertools import batched
 from pathlib import Path
 
 from backend.ingest import inspect_csv
+
+DEFAULT_CHUNK_SIZE = 5_000
+INSERT_RECORD_SQL = (
+    "INSERT INTO mplads_source_record VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+)
 
 DDL = """
 CREATE TABLE IF NOT EXISTS mplads_ingest_batch (
@@ -32,9 +38,11 @@ CREATE TABLE IF NOT EXISTS mplads_source_record (
 """
 
 
-def stage(connection, report, records):
+def stage(connection, report, records, chunk_size=DEFAULT_CHUNK_SIZE):
     from psycopg.types.json import Jsonb
 
+    if chunk_size < 1:
+        raise ValueError("Chunk size must be a positive integer")
     identity = (report["sha256"], report["version"])
     with connection.cursor() as cursor:
         cursor.execute(
@@ -56,23 +64,24 @@ def stage(connection, report, records):
             if cursor.fetchone()[0] != len(records):
                 raise ValueError("Existing batch has an inconsistent record count")
             return False
-        cursor.executemany(
-            "INSERT INTO mplads_source_record VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-            [
-                (
-                    *identity,
-                    r["record_number"],
-                    r["kind"],
-                    Jsonb(r["original"]),
-                    Jsonb(r["cleaned"]),
-                    Jsonb(r["derived"]),
-                    Jsonb(r["issues"]),
-                    r["line_start"],
-                    r["line_end"],
-                )
-                for r in records
-            ],
-        )
+        for chunk in batched(records, chunk_size):
+            cursor.executemany(
+                INSERT_RECORD_SQL,
+                [
+                    (
+                        *identity,
+                        r["record_number"],
+                        r["kind"],
+                        Jsonb(r["original"]),
+                        Jsonb(r["cleaned"]),
+                        Jsonb(r["derived"]),
+                        Jsonb(r["issues"]),
+                        r["line_start"],
+                        r["line_end"],
+                    )
+                    for r in chunk
+                ],
+            )
     return True
 
 
@@ -80,7 +89,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", type=Path)
     parser.add_argument("--create-tables", action="store_true")
+    parser.add_argument("--chunk-size", type=int, default=DEFAULT_CHUNK_SIZE)
     args = parser.parse_args()
+    if args.chunk_size < 1:
+        parser.error("--chunk-size must be a positive integer")
     if not os.environ.get("DATABASE_URL"):
         parser.error(
             "Set DATABASE_URL in the process environment; never put credentials in arguments"
@@ -94,7 +106,7 @@ def main():
         ) as connection:
             if args.create_tables:
                 connection.execute(DDL)
-            changed = stage(connection, report, records)
+            changed = stage(connection, report, records, args.chunk_size)
         print("Staged for review" if changed else "Identical batch already staged")
     except psycopg.Error:
         # Driver messages can contain connection details; do not print secrets.

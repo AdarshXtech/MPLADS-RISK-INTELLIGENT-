@@ -1,12 +1,22 @@
 """API summary tests using synthetic rows and the dedicated PostgreSQL database."""
 
+import importlib
 import os
+from contextlib import contextmanager
 from uuid import uuid4
 
 import pytest
+from fastapi import HTTPException
 
-from backend.main import app, read_data_overview, require_review_key
+from backend.main import (
+    app,
+    database_connection,
+    read_data_overview,
+    require_review_key,
+)
 from backend.staging import DDL, stage
+
+main_module = importlib.import_module("backend.main")
 
 
 def synthetic_batch():
@@ -31,8 +41,6 @@ def synthetic_batch():
 
 
 def test_investigation_api_key_is_required(monkeypatch):
-    from fastapi import HTTPException
-
     monkeypatch.setenv("MPLADS_REVIEW_API_KEY", "synthetic-test-key")
     require_review_key("synthetic-test-key")
     with pytest.raises(HTTPException) as missing:
@@ -56,6 +64,31 @@ def test_investigation_sort_is_a_closed_api_enum():
         "state",
         "recently_reviewed",
     ]
+
+
+def test_database_dependency_reuses_configured_pool(monkeypatch):
+    class FakePool:
+        @contextmanager
+        def connection(self):
+            yield "pooled-connection"
+
+    monkeypatch.setattr(main_module, "connection_pool", FakePool())
+
+    dependency = database_connection()
+
+    assert next(dependency) == "pooled-connection"
+    with pytest.raises(StopIteration):
+        next(dependency)
+
+
+def test_database_dependency_reports_missing_configuration(monkeypatch):
+    monkeypatch.setattr(main_module, "connection_pool", None)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+
+    with pytest.raises(HTTPException) as error:
+        next(database_connection())
+
+    assert error.value.status_code == 503
 
 
 @pytest.mark.skipif(

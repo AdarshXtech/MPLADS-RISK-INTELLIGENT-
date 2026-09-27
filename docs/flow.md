@@ -10,6 +10,8 @@ Candidate evidence passes its already loaded source records to `LocationComparis
 
 On Command Centre, `ReviewerDashboard()` loads the data overview and investigation summary, renders pending review workload and review progress below the page heading, then renders scope, interpretation notice and source-data sections. The workload link opens `/investigation-queue?status=NEW`; the existing queue route applies that filter to its API request. Data Quality continues to render the source-data view without requesting investigation summary. The authenticated reviewer ID and data-service status appear in the shared Suchak AI header.
 
+`python -m backend.staging` parses and validates one complete source export, then `stage()` sends record parameters to PostgreSQL in bounded chunks of 5,000 by default. Every chunk remains inside the existing single transaction. A failure rolls back the source batch, repeated source identities remain idempotent, and the later detector still groups the complete staged sanctioned dataset so matches cannot be missed across chunk boundaries. Parsing and report profiling remain in memory for the current export sizes.
+
 The optional `backend.near_duplicate` CLI reads the unchanged sanctioned-work CSV with `ingest.inspect_csv`, groups different Work IDs by exact administrative/date/amount context, and computes description similarity for non-identical descriptions. It prints a bounded calibration report without writing PostgreSQL or modifying `backend.detectors.detect()`. The website, latest reviewable run and 174 existing groups are unchanged. Fraud probability remains unavailable.
 
 Data Quality navigation now opens the authenticated `/data-quality` route, rather than a fragment on Command Centre. `frontend/app/command-centre/dashboard.tsx` renders the shared source-data view for both routes. Data Quality requests `GET /data-overview` only; Command Centre also requests the protected investigation summary. The Data Quality route has its own title, loading, empty and service-error states, with a retry link back to the same route. The 2026-09-10 fragment flow below is historical and superseded.
@@ -150,6 +152,8 @@ No browser-side JavaScript receives the database connection string. The server-r
 
 The separate `backend` console script maps to `backend.__init__.main()` and only prints a greeting. It does not launch the API server.
 
+FastAPI lifespan startup creates a small Psycopg `ConnectionPool` when `DATABASE_URL` is configured. API routes continue to request database access through `database_connection()`, which checks out one pooled connection for the request and returns it afterwards. If the dependency is used outside lifespan during a focused test, it retains the previous direct `psycopg.connect()` fallback. Shutdown closes the pool. No route receives or logs the database URL.
+
 Implemented request flows:
 
 ```text
@@ -165,7 +169,7 @@ GET /health
 
 GET /data-overview
 -> backend.main.database_connection()
--> Psycopg read-only application connection
+-> pooled Psycopg read-only application connection
 -> backend.main.read_data_overview()
 -> grouped query over staging batch/record tables
 -> Pydantic DataOverview response
@@ -173,21 +177,21 @@ GET /data-overview
 
 GET /investigation-summary
 -> require_review_key()
--> database_connection()
+-> database_connection() pooled checkout
 -> investigations.investigation_summary()
 -> latest reviewable run plus latest append-only status
 -> protected aggregate status counts
 
 GET /review-events
 -> require_review_key()
--> database_connection()
+-> database_connection() pooled checkout
 -> investigations.list_review_events()
 -> latest reviewable run plus append-only review events
 -> server-side search/status filter, newest-first sort and pagination
 
 GET /investigation-candidates
 -> require_review_key()
--> database_connection()
+-> database_connection() pooled checkout
 -> investigations.list_candidates()
 -> latest reviewable run plus latest review event
 -> filtered, paginated CandidatePage
@@ -247,7 +251,7 @@ Not implemented. No composite risk score is calculated or displayed. Detector se
 
 ## Database persistence flow
 
-`python -m backend.staging` -> `main()` reads DATABASE_URL -> `inspect_csv()` -> `psycopg.connect()` transaction -> optional explicit table creation -> `stage()` -> parameterised batch/record inserts. Source hash, parser version and row ordinal identify records, not Work ID. Original/cleaned/derived/issues are separate JSONB fields. Repeated batches are checked, not reinserted. Exceptions roll back the transaction.
+`python -m backend.staging` -> `main()` reads DATABASE_URL and optional positive `--chunk-size` -> `inspect_csv()` -> `psycopg.connect()` transaction -> optional explicit table creation -> `stage()` -> parameterised batch insert followed by bounded record insert chunks. Source hash, parser version and row ordinal identify records, not Work ID. Original/cleaned/derived/issues are separate JSONB fields. Repeated batches are checked, not reinserted. Exceptions roll back the transaction.
 
 `mplads_detector_run` stores immutable configuration, sources, unavailable detectors, result count/hash and run disposition. `mplads_detector_result` stores explainable candidate evidence and source references. The version-1 calibration run is retained. The latest version-2 reviewable run is tied to all six source batches and contains 174 potential-duplicate groups. The application role has SELECT/INSERT but no UPDATE/DELETE permission on detector tables. The development database contains six source batches and 141,717 retained source records; see `docs/ingestion.md`.
 
