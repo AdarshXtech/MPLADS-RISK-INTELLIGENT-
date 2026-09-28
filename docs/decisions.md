@@ -1,5 +1,18 @@
 # Technical decisions
 
+## 2026-09-28: Size the Data Quality analysis rail by its parent layout
+
+- **Decision:** Render the constrained desktop analysis rail as one column, allow two columns only when the parent command layout has reflowed to full width, and use one column on phones.
+- **Problem:** A shared minimum-width rule divided an already narrow 18rem desktop rail into two cards. Source-review counts and pipeline-status labels were consequently clipped even though the page itself had no horizontal scrollbar.
+- **Alternatives considered:** Reduce text size, truncate status labels, force word breaks, or increase the entire page width. Those options hide the layout fault or reduce readability.
+- **Selected approach and reason:** Correct three existing CSS grid declarations at the relevant breakpoints. This retains the current components and content while giving each card enough usable width.
+- **Library selection and reason:** Not applicable. Native CSS grid already provides the required reflow.
+- **Trade-offs:** Desktop rail cards stack vertically and use slightly more page height. Tablet layouts retain two columns where the rail spans the full content width.
+- **Performance impact:** None beyond negligible CSS rule evaluation. No JavaScript or dependency was added.
+- **Maintainability impact:** The rail layout now follows the parent grid state at the same breakpoints, avoiding component-specific text workarounds.
+- **Security impact:** None.
+- **Affected files:** `frontend/app/globals.css`, `docs/decisions.md`, `docs/CODEX_LOG.md`.
+
 ## 2026-09-28: Reuse PostgreSQL connections in the FastAPI backend
 
 - **Decision:** Add a small Psycopg connection pool to the FastAPI lifespan and keep the existing per-request database dependency as the only SQL entry point.

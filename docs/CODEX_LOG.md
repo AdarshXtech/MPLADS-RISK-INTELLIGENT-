@@ -1,5 +1,13 @@
 # Codex log
 
+## 2026-09-28: Correct Data Quality analysis-rail reflow
+
+- **Task:** Fix clipped source-review counts and pipeline-status labels in the narrow cards shown on the Data Quality and Command Centre views.
+- **Files modified:** `frontend/app/globals.css`, `docs/decisions.md`, `docs/CODEX_LOG.md`.
+- **Cause and correction:** The desktop command layout already constrained its analysis rail to 18rem, but a shared tablet rule divided that rail into two further columns. Keep the constrained desktop rail to one column, use two columns only after the main layout reflows to full width between 48rem and 70rem, and return to one column below 48rem. No content, data or interactive behaviour changed.
+- **Verification:** ESLint passed. The production Next.js build passed. Focused Chromium responsive journeys passed at 390x844, 768x1024 and 1440x900 with horizontal-overflow and clipped-control assertions. Captured Data Quality pages were visually inspected at all three sizes; review counts and every pipeline status remain inside their cards.
+- **Known limitations:** Browser fixtures are explicitly synthetic. This focused correction was not rerun across Firefox and WebKit because it changes only CSS grid breakpoints and the established cross-browser suite already covers the same routes.
+
 ## 2026-09-28: Repair CI test fixtures and unresolved browser-test merge
 
 - **Task:** Investigate six reported PostgreSQL investigation-test failures and the failing frontend CI job at commit `75278df`.
