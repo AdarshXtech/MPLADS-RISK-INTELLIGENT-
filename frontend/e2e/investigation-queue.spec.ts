@@ -79,13 +79,8 @@ test("reviewer can filter, paginate, inspect evidence and save an action", async
   await page.getByRole("link", { name: "Data Quality" }).click();
   await expect(page).toHaveURL(/\/data-quality$/);
   await expect(page.getByRole("heading", { name: "Data Quality", exact: true })).toBeVisible();
-<<<<<<< HEAD
   await expect(page.getByRole("link", { name: "Data Quality" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("heading", { name: "Ingested source reports" })).toBeVisible();
-<<<<<<< HEAD
-=======
->>>>>>> main
-=======
   await page.getByRole("link", { name: "Audit Trail", exact: true }).click();
   await expect(page).toHaveURL(/\/audit-trail$/);
   await expect(page.getByRole("heading", { name: "Review Audit Trail", exact: true })).toBeVisible();
@@ -100,7 +95,6 @@ test("reviewer can filter, paginate, inspect evidence and save an action", async
   await expect(page.locator(".audit-table tbody tr")).toHaveCount(1);
   await page.getByRole("link", { name: "Clear", exact: true }).click();
   await expect(page.getByLabel("Recorded status")).toHaveValue("");
->>>>>>> 1062665ff71216161c5215d1c3b6a9d9de8a9378
 });
 
 test("filtered CSV downloads all pages and reports failures without leaving the queue", async ({ page }) => {

@@ -65,7 +65,7 @@ def investigation_connection():
         )
         connection.execute(DETECTOR_DDL)
         records = [record(1), record(2)]
-        run, detected_results = build_run(
+        run, results = build_run(
             [
                 {
                     "source_file": "Synthetic.csv",
@@ -75,11 +75,6 @@ def investigation_connection():
             ],
             records,
         )
-        results = [
-            item
-            for item in detected_results
-            if item["detector_id"] == "duplicate_work_candidate"
-        ]
         stage_run(connection, run, results)
         connection.execute(
             "CREATE TABLE mplads_source_record (source_sha256 text, parser_version text, "
@@ -99,7 +94,6 @@ def investigation_connection():
                     Jsonb([]),
                 ),
             )
-        connection.execute(LOCATION_DDL)
         connection.execute(DDL)
         yield connection, results[0]["result_id"]
 

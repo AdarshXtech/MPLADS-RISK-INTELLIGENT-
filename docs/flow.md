@@ -1,6 +1,6 @@
 # Application execution flow
 
-This document describes the implementation that exists in the repository on 2026-09-26. It does not describe planned behaviour as if it were implemented.
+This document describes the implementation that exists in the repository on 2026-09-28. It does not describe planned behaviour as if it were implemented.
 
 All authenticated frontend routes render through `QueueShell`. Its Suchak AI header exposes Overview, Risk Triage, Audit Trail and Source Quality; the desktop operational sidebar exposes the same routes with their product names. Below 70rem the header navigation is removed and the sidebar navigation becomes a full-width route bar. Candidate evidence retains a two-column evidence and reviewer layout on wide screens and stacks it on smaller screens.
 
@@ -9,6 +9,8 @@ All authenticated frontend routes render through `QueueShell`. Its Suchak AI hea
 Candidate evidence passes its already loaded source records to `LocationComparison`. Selecting Work A or Work B changes the two-record view, clears stale source detail, redraws the verified markers and line, recalculates the Leaflet spherical separation and automatically fits the selected points. Missing or unverified coordinates produce no substitute marker. Marker activation retains the authenticated source-detail flow described below.
 
 On Command Centre, `ReviewerDashboard()` loads the data overview and investigation summary, renders pending review workload and review progress below the page heading, then renders scope, interpretation notice and source-data sections. The workload link opens `/investigation-queue?status=NEW`; the existing queue route applies that filter to its API request. Data Quality continues to render the source-data view without requesting investigation summary. The authenticated reviewer ID and data-service status appear in the shared Suchak AI header.
+
+Both route entry points call the existing `ReviewerDashboard` in `frontend/app/command-centre/dashboard.tsx`. The 2026-09-28 CI repair removed duplicate route rendering code that had bypassed this component. The same repair restored both generated detector results in the PostgreSQL investigation fixture, resolved browser-test merge markers, and moved the installed Leaflet stylesheet import from Tailwind CSS to the root Next.js layout. Detector and database request paths are unchanged.
 
 `python -m backend.staging` parses and validates one complete source export, then `stage()` sends record parameters to PostgreSQL in bounded chunks of 5,000 by default. Every chunk remains inside the existing single transaction. A failure rolls back the source batch, repeated source identities remain idempotent, and the later detector still groups the complete staged sanctioned dataset so matches cannot be missed across chunk boundaries. Parsing and report profiling remain in memory for the current export sizes.
 

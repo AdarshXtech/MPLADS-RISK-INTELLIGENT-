@@ -1,5 +1,14 @@
 # Codex log
 
+## 2026-09-28: Repair CI test fixtures and unresolved browser-test merge
+
+- **Task:** Investigate six reported PostgreSQL investigation-test failures and the failing frontend CI job at commit `75278df`.
+- **Files modified:** `backend/tests/test_investigations.py`, `frontend/e2e/investigation-queue.spec.ts`, `frontend/e2e/responsiveness.spec.ts`, `frontend/app/command-centre/page.tsx`, `frontend/app/data-quality/page.tsx`, `frontend/app/layout.tsx`, `frontend/app/globals.css`, `docs/flow.md`, `docs/CODEX_LOG.md`. No backend application logic or database data changed.
+- **Cause and correction:** The investigation fixture built two synthetic detector results but filtered out the locality result before staging, leaving its stored run inconsistent with the test expectations. Restored both results and removed a redundant second execution of the location DDL. The reported synthetic UUID key belongs to a separate staging test that intentionally checks rollback on a duplicate insert; the location DDL does not insert source records. Resolved committed merge-conflict markers in two Playwright files, retaining Data Quality and Audit Trail coverage.
+- **Frontend build:** The clean-install build could not resolve Leaflet CSS imported through Tailwind's CSS resolver even though the package was installed. Import the Leaflet stylesheet in the root Next.js layout, leaving the project's Tailwind stylesheet import in `globals.css`.
+- **Route regression:** A merge replaced the existing shared `ReviewerDashboard` with duplicated page implementations, so the pending-review action, source-count explanation and empty-state layout disappeared. Both route entry points now call the shared component again. The Data Quality path requests only the overview, while Command Centre also requests investigation summary.
+- **Verification:** Backend unit tests: 53 passed, 15 PostgreSQL-only tests skipped. Ruff lint and formatting passed. Frontend lint passed after conflict resolution. A production Next.js build completed during Playwright startup. The Chromium reviewer journey and phone, tablet and desktop state checks passed after route restoration. Hosted PostgreSQL CI and the complete browser matrix remain to be verified. The local `TEST_DATABASE_URL` endpoint is unreachable, so PostgreSQL-backed tests cannot complete here.
+
 ## 2026-09-28: Pool backend PostgreSQL connections for Render latency
 
 - **Task:** Improve the FastAPI backend before considering a move from Render to DigitalOcean.
