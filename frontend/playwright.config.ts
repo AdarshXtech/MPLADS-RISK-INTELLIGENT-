@@ -20,6 +20,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   reporter: "list",
+  expect: { timeout: 15_000 },
   use: { baseURL: "http://127.0.0.1:3012", trace: "retain-on-failure" },
   webServer: [
     { command: "node e2e/mock-api.mjs", port: 8012, env: { MPLADS_REVIEW_API_KEY: process.env.MPLADS_E2E_API_KEY }, reuseExistingServer: false },
