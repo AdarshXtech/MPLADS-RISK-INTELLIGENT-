@@ -104,6 +104,12 @@ Implemented results expose ID/name, severity, confidence, source-file hash and r
 
 Composite weights, risk thresholds and probability calibration remain undecided and unimplemented. Data-quality issues stay separate from detector results. Generative AI does not participate in detection. An anomaly does not prove fraud.
 
+## Grounded explanation after detection
+
+Candidate detail may optionally send the already persisted detector explanation, fields, evidence, source-linked Work IDs, available sanction facts and reviewed location facts to `backend.explainer`. This happens only after the detector result has been selected from the latest reviewable run. It does not execute a detector, alter a result, write a database row, change severity or confidence, or affect queue order.
+
+The LLM path is enabled only when `LLM_API_KEY`, `LLM_MODEL_NAME` and `LLM_BASE_URL` are all configured. Its structured response is accepted only after deterministic checks reject unknown Work IDs, figures not present in the grounded context, unsupported currency amounts or percentages, prohibited accusatory wording, emojis and em dashes. Rejection, timeout, malformed JSON, provider failure or missing configuration returns a deterministic synthesis constructed from the stored explanation, evidence, verification step and limitations. The original detector fields remain visible beside either synthesis.
+
 ## Locality-first potential-duplicate screening
 
 - **Detector ID/version:** `locality_duplicate_candidate` version 1, introduced in engine version 3. `duplicate_work_candidate` version 1 remains unchanged and historical results are retained.

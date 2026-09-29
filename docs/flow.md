@@ -1,6 +1,12 @@
 # Application execution flow
 
-This document describes the implementation that exists in the repository on 2026-09-28. It does not describe planned behaviour as if it were implemented.
+This document describes the implementation that exists in the repository on 2026-09-30. It does not describe planned behaviour as if it were implemented.
+
+## Grounded candidate synthesis
+
+Authenticated candidate page -> Next.js server-only `getCandidate()` -> protected FastAPI `GET /investigation-candidates/{result_id}` -> existing `candidate_detail()` SQL reads -> immutable detector evidence, source records and review history -> `build_grounded_context()` -> optional configured LLM request -> `GeneratedSynthesis` schema validation -> identifier, figure, amount, percentage and language guardrails -> `CandidateSynthesis` in the existing detail response.
+
+If the provider is unconfigured, unavailable, times out, returns malformed JSON or fails validation, `deterministic_fallback()` returns the stored detector explanation, evidence-derived factors, existing verification step and existing limitations. The route remains available and retains the same review authentication. Neither path calls `detect()`, updates PostgreSQL, changes the candidate flag, changes severity or confidence, or affects review state and queue order.
 
 All authenticated frontend routes render through `QueueShell`. Its Suchak AI header exposes Overview, Risk Triage, Audit Trail and Source Quality; the desktop operational sidebar exposes the same routes with their product names. Below 70rem the header navigation is removed and the sidebar navigation becomes a full-width route bar. Candidate evidence retains a two-column evidence and reviewer layout on wide screens and stacks it on smaller screens.
 

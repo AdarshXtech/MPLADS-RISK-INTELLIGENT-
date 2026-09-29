@@ -112,6 +112,9 @@ h3 { font-size: 0.88rem; }
 .panel-body > :last-child { margin-bottom: 0; }
 .panel-body ul { padding-left: 1.2rem; }
 .panel-body li + li { margin-top: 0.4rem; }
+.synthesis-grid { display: grid; gap: 1rem; margin-top: 1rem; }
+.synthesis-grid h3 { margin: 0 0 0.45rem; color: var(--ink); font-size: 0.78rem; }
+.synthesis-grid ul { margin-top: 0; }
 .count-badge { flex: 0 0 auto; border: 1px solid #cfdee7; border-radius: 4px; background: #f1f6f9; color: #305f78; padding: 0.3rem 0.5rem; font-size: 0.68rem; font-weight: 650; }
 .table-wrap { overflow-x: auto; }
 .source-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
@@ -257,7 +260,7 @@ h3 { font-size: 0.88rem; }
 }
 @media (min-width: 48rem) {
   .scope-strip, .limits { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .filter-bar, .evidence-grid, .matched-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .filter-bar, .evidence-grid, .matched-grid, .synthesis-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .case-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 @media (min-width: 64rem) {

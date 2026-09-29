@@ -156,6 +156,13 @@ function detail(candidate) {
     evidence: { matched_values: { "Work description": candidate.work_description, State: candidate.state, Constituency: candidate.constituency, IDA: candidate.ida, "Sanction Date": candidate.sanction_date, "Sanction Amount": candidate.sanction_amount } },
     verification_step: "Verify the underlying synthetic records before deciding.",
     limitations: ["Synthetic browser-test fixture only.", "This is not proof of duplication or misuse."],
+    synthesis: {
+      summary_brief: "Two synthetic records share the configured evidence and require administrative verification.",
+      primary_concerns: ["Separate Work IDs share the configured description and administrative fields."],
+      verification_checklist: ["Compare the source sanction records and physical asset evidence."],
+      data_limitations: ["Synthetic browser-test fixture only."],
+      generation_mode: "deterministic_fallback",
+    },
     source_records: workIds.map((work_id, index) => ({ source_sha256: "synthetic-source-sha256", parser_version: "test", record_number: index + 1, work_id, cleaned_values: { "Work description": candidate.work_description, "Constituency": candidate.constituency, "IDA": candidate.ida, "Sanction Amount ( INR )": candidate.sanction_amount }, derived_values: { work_id }, validation_issues: [], location: { status: candidate.location_statuses[index % candidate.location_statuses.length], state: candidate.state, district: "Synthetic district", constituency: candidate.constituency, block_tehsil: "Synthetic block", ward_village: "Synthetic ward", verified_address_text: null, latitude: candidate.distance_metres === null ? null : 20.1, longitude: candidate.distance_metres === null ? null : 78.1, location_source: "Synthetic browser fixture", last_verified_at: null } })),
     history,
   };

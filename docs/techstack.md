@@ -1,6 +1,6 @@
 # Technology baseline
 
-Inspected 2026-09-06. Manifest declarations are not claims of runtime verification.
+Updated 2026-09-30. Manifest declarations are not claims of runtime verification.
 
 | Area | Present in repository | Intended use / limitation |
 | --- | --- | --- |
@@ -10,14 +10,17 @@ Inspected 2026-09-06. Manifest declarations are not claims of runtime verificati
 | Backend | FastAPI, Uvicorn, Pydantic | Status, aggregate data, protected candidate/evidence, paginated audit-event, review-event and CSV endpoints |
 | Python | Python 3.12 selection, uv, uv.lock | Use uv and the committed lock for reproducibility; pyproject currently permits Python >=3.12 |
 | Analytics | pandas, NumPy, scikit-learn declared | Active deterministic potential-duplicate rule uses the standard library; no trained ML model |
+| Optional explanation | Python standard-library HTTPS client plus Pydantic | OpenAI-compatible structured synthesis after detection; deterministic fallback is the default and no AI framework or provider SDK is added |
 | Persistence | PostgreSQL 17.11 and psycopg[binary,pool] | Project-local loopback service; FastAPI reuses a small Psycopg connection pool; two-table staging verified; SQLAlchemy remains declared but unused |
-| Backend quality | pytest and Ruff | 49 local tests pass and 15 PostgreSQL-backed cases are skipped when `TEST_DATABASE_URL` is unavailable; Ruff passes |
+| Backend quality | pytest and Ruff | 60 local tests pass and 15 PostgreSQL-backed cases are skipped when `TEST_DATABASE_URL` is unavailable; Ruff passes |
 | Frontend quality | ESLint and production build | Both pass; no Vitest dependency added for the current server-rendered slice |
 | Browser QA | Pinned `@playwright/test` | The reproducible 66-scenario E2E suite covers Chromium, Firefox and WebKit, including authentication, filters, pagination, audit history, duplicate comparison, keyboard use and phone/tablet layouts |
 | Continuous integration | GitHub Actions | Two read-only jobs reproduce backend PostgreSQL integration checks and frontend production-build browser QA on pushes and pull requests to `master`; no deployment permission or project secret |
 | Responsive screenshots | Existing Playwright and Node.js | Eight viewport sizes, additional 640-pixel reflow check, loading/error/empty/review states and an optional local PNG gallery; see [responsive-ui.md](responsive-ui.md) |
 
 Exact backend ranges are in `backend/pyproject.toml`; resolution is in `backend/uv.lock`. Psycopg's binary extra was added after a verified missing-libpq failure on Windows; its official pool extra is used by the FastAPI app to avoid one PostgreSQL connection setup per request. Standard-library CSV, Decimal, JSON and hashing implement file staging. Standard-library regular expressions, grouping and median calculation implement deterministic detector screening. Read-only static XLSX inspection uses zipfile/XML, not a general workbook library. Frontend dependencies are recorded in `frontend/package.json` and `frontend/package-lock.json`, including Lucide React for the 2026-09-25 UI refresh. Native Next.js Server Components, `fetch`, semantic HTML and CSS cover the remaining UI without a table, state or dialog library.
+
+The optional synthesis uses the existing Pydantic dependency and Python `urllib.request`; there is no new runtime package or lockfile change. The provider must support an OpenAI-compatible `/chat/completions` endpoint with strict JSON-schema output. Missing or invalid configuration leaves the application on deterministic fallback.
 
 Reuse the current stack. Add Zod, text-similarity tooling, Vitest or axe only for a concrete need. No agent framework or additional microservices. Context7 was used before implementing Psycopg transactions, JSONB and binary installation. Poppler was already available for PDF reference inspection.
 

@@ -1,5 +1,23 @@
 # Codex log
 
+## 2026-09-30: Initialise reviewed-location schema in Neon
+
+- **Task:** Investigate and correct the missing `mplads_work_location` table in the deployed Neon `public` schema.
+- **Files modified:** `docs/CODEX_LOG.md` only. No application code, detector logic, staging schema or source data changed.
+- **Cause and correction:** The repository initialiser already included the reviewed-location DDL after its foreign-key source table, but the documented manual initialisation step had not been rerun against Neon after this table was introduced. Ran the existing idempotent `python -m backend.init_db` command with the configured database connection.
+- **Verification:** A live read-only query before initialisation confirmed that `public.mplads_work_location` was absent and that the connected owner role could create objects in `public`. A live query after initialisation confirmed the table, `mplads_work_location_source_idx`, all 20 columns and an empty row count.
+- **Data boundary:** No reviewed locations, inferred coordinates or synthetic government records were inserted. The table is ready for a separately authorised reviewed-location import.
+
+## 2026-09-30: Add grounded candidate synthesis with deterministic fallback
+
+- **Task:** Add an optional AI explanation layer after existing deterministic detection, without changing detector rules, SQL queries, staging, reviewed-location persistence, database schemas, risk flags, severity or confidence.
+- **Files created:** `backend/src/backend/explainer.py`, `backend/tests/test_explainer.py`, `backend/.env.example`.
+- **Files modified:** Backend candidate-detail response and investigation integration test; frontend candidate type, evidence page, CSS, mock API and browser journey; PRD, detector, architecture, technology, deployment, decisions, flow and this log.
+- **Implementation:** Candidate detail extracts a bounded Pydantic context from stored detector evidence and source-linked Work IDs, sanction fields and location facts. An optional OpenAI-compatible request asks for strict JSON at temperature zero. Post-generation checks reject unknown Work IDs, unsupported figures, amounts and percentages, prohibited wording, emojis and em dashes. Missing configuration, provider errors, malformed output or guardrail rejection returns a deterministic brief based on the stored explanation, evidence, verification step and limitations.
+- **Boundary:** Generated content cannot call detection or persistence code and is not stored. Original evidence remains visible. The response labels validated provider output separately from deterministic fallback. Provider credentials stay in backend environment variables.
+- **Verification:** The complete backend run passed 60 tests and skipped 15 PostgreSQL-only cases because `TEST_DATABASE_URL` is unavailable. The new six-test explainer suite covers accepted grounded output, unknown Work ID rejection, unsupported amount and percentage rejection, provider failure and unconfigured fallback; the API schema test confirms candidate detail requires the synthesis object. Ruff lint and format, TypeScript, targeted ESLint and the production Next.js webpack build passed. The focused reviewer journey and responsive long-evidence test passed in installed Edge against the synthetic API. The Playwright-managed Chromium binary is absent locally, so Edge provided the Chromium-engine verification; Firefox and WebKit were not repeated for this focused addition.
+- **Known limitations:** External provider behaviour was not exercised with official records or credentials. Provider governance, region, retention and government-data handling approval are required before configuration. PostgreSQL-backed integration cases require the dedicated test database and were skipped locally. The untracked `.refact/` directory predates this task and was not modified.
+
 ## 2026-09-28: Correct Data Quality analysis-rail reflow
 
 - **Task:** Fix clipped source-review counts and pipeline-status labels in the narrow cards shown on the Data Quality and Command Centre views.

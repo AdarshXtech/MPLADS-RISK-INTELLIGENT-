@@ -1,6 +1,6 @@
 # Deployment readiness
 
-Updated 2026-09-09. The backend and PostgreSQL infrastructure are deployed for staging. The application is not ready for a public or departmental production deployment because the deployed database currently contains no staged source batches or detector results, and the production frontend and identity flow are not verified here.
+Updated 2026-09-30. The backend and PostgreSQL infrastructure are deployed for staging. The application is not ready for a public or departmental production deployment because the deployed database currently contains no staged source batches or detector results, and the production frontend and identity flow are not verified here.
 
 ## Verified staging status
 
@@ -70,6 +70,8 @@ Backend:
 
 - `DATABASE_URL`: production PostgreSQL connection using TLS and the least-privilege application role
 - `MPLADS_REVIEW_API_KEY`: strong secret shared only with the Next.js server
+- `LLM_API_KEY`, `LLM_MODEL_NAME`, `LLM_BASE_URL`: optional server-only grounded-synthesis configuration; leave all three unset to use deterministic fallback
+- `LLM_TIMEOUT_SECONDS`: optional bounded provider timeout from 1 to 30 seconds; defaults to 8
 
 Frontend:
 
@@ -82,6 +84,8 @@ Frontend:
 - `NODE_ENV=production`
 
 Do not prefix secrets with `NEXT_PUBLIC_`. For multiple Next.js instances, also configure the documented shared Server Action encryption key and deployment/version-skew controls. That complexity is unnecessary for the first single-instance staging deployment.
+
+Before enabling an external LLM, approve the provider, region, retention policy and government-data handling terms. The API key must exist only in the FastAPI runtime. Provider failures and rejected responses are logged without prompts, source facts, credentials or response bodies.
 
 ## Release gates
 

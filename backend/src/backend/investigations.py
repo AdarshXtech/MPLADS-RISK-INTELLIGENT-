@@ -10,6 +10,7 @@ import psycopg
 from fastapi import HTTPException
 from pydantic import BaseModel, Field
 
+from backend.explainer import CandidateSynthesis, synthesise_candidate
 from backend.review_export import encode_csv
 
 Status = Literal[
@@ -167,6 +168,7 @@ class CandidateDetail(InvestigationCandidate):
     limitations: list[str]
     source_records: list[SourceEvidence]
     history: list[ReviewEvent]
+    synthesis: CandidateSynthesis
 
 
 class ReviewEventCreate(BaseModel):
@@ -546,6 +548,60 @@ def candidate_detail(connection, result_id: str) -> CandidateDetail:
         "WHERE run_id=%s AND result_id=%s ORDER BY event_id DESC",
         (detector[0], result_id),
     ).fetchall()
+    source_records = [
+        SourceEvidence(
+            source_sha256=item[0],
+            parser_version=item[1],
+            record_number=item[2],
+            work_id=item[3],
+            cleaned_values=item[4],
+            derived_values=item[5],
+            validation_issues=item[6],
+            location={
+                "status": item[16]
+                or (
+                    "ADMINISTRATIVE_ONLY"
+                    if item[4].get("State") or item[4].get("Constituency")
+                    else "LOCATION_UNAVAILABLE"
+                ),
+                "state": item[7] or item[4].get("State"),
+                "district": item[8],
+                "constituency": item[9] or item[4].get("Constituency"),
+                "block_tehsil": item[10],
+                "ward_village": item[11],
+                "verified_address_text": item[12],
+                "latitude": float(item[13]) if item[13] is not None else None,
+                "longitude": float(item[14]) if item[14] is not None else None,
+                "location_source": item[15],
+                "last_verified_at": item[17].isoformat() if item[17] else None,
+            },
+        )
+        for item in sources
+    ]
+    review_history = [
+        ReviewEvent(
+            from_status=item[0],
+            to_status=item[1],
+            decision=item[2],
+            reason_code=item[3],
+            documents_checked=item[4],
+            evidence_references=item[5],
+            notes=item[6],
+            reviewer=item[7],
+            created_at=item[8],
+        )
+        for item in history
+    ]
+    synthesis_input = {
+        "detector_id": detector[1],
+        "detector_name": base.detector_name,
+        "explanation": base.explanation,
+        "fields_used": detector[2],
+        "evidence": detector[3],
+        "verification_step": detector[4],
+        "limitations": detector[5],
+        "source_records": source_records,
+    }
     return CandidateDetail(
         **base.model_dump(),
         detector_id=detector[1],
@@ -553,50 +609,9 @@ def candidate_detail(connection, result_id: str) -> CandidateDetail:
         evidence=detector[3],
         verification_step=detector[4],
         limitations=detector[5],
-        source_records=[
-            SourceEvidence(
-                source_sha256=item[0],
-                parser_version=item[1],
-                record_number=item[2],
-                work_id=item[3],
-                cleaned_values=item[4],
-                derived_values=item[5],
-                validation_issues=item[6],
-                location={
-                    "status": item[16]
-                    or (
-                        "ADMINISTRATIVE_ONLY"
-                        if item[4].get("State") or item[4].get("Constituency")
-                        else "LOCATION_UNAVAILABLE"
-                    ),
-                    "state": item[7] or item[4].get("State"),
-                    "district": item[8],
-                    "constituency": item[9] or item[4].get("Constituency"),
-                    "block_tehsil": item[10],
-                    "ward_village": item[11],
-                    "verified_address_text": item[12],
-                    "latitude": float(item[13]) if item[13] is not None else None,
-                    "longitude": float(item[14]) if item[14] is not None else None,
-                    "location_source": item[15],
-                    "last_verified_at": item[17].isoformat() if item[17] else None,
-                },
-            )
-            for item in sources
-        ],
-        history=[
-            ReviewEvent(
-                from_status=item[0],
-                to_status=item[1],
-                decision=item[2],
-                reason_code=item[3],
-                documents_checked=item[4],
-                evidence_references=item[5],
-                notes=item[6],
-                reviewer=item[7],
-                created_at=item[8],
-            )
-            for item in history
-        ],
+        source_records=source_records,
+        history=review_history,
+        synthesis=synthesise_candidate(synthesis_input),
     )
 
 

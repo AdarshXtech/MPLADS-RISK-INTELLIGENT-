@@ -1,6 +1,6 @@
 # Product requirements
 
-Status: requirements baseline with verified ingestion, one deterministic candidate rule, a data-readiness command centre and the first authenticated Investigation Queue slice. Updated 2026-09-07.
+Status: requirements baseline with verified ingestion, deterministic candidate screening, an optional grounded synthesis layer, a data-readiness command centre and an authenticated Investigation Queue. Updated 2026-09-30.
 
 ## Purpose and users
 
@@ -40,6 +40,8 @@ Follow the latest brief: Phase 0 repository/research; 1 dataset analysis/documen
 Phase 0 is partial. Field inspection, file ingestion and PostgreSQL staging now cover all six supplied CSV report sets, and the live database integration test passes. The recorded export scope is All India, Lok Sabha. Source completeness, exact extraction time, allocation period, calamity scope and human review remain unresolved. Do not build risk UI to bypass these gates. The earlier session's label "Phase 2 dataset inspection" remains historical; this document uses the latest phase numbering.
 
 ## Current implementation
+
+Candidate detail now includes an isolated grounded synthesis after deterministic detection. The backend passes only existing detector evidence and selected source facts to an optional configured LLM, validates the structured response for unknown Work IDs, unsupported figures, unsupported amounts and percentages, prohibited language and writing-policy violations, and otherwise returns a deterministic template assembled from the stored explanation, evidence, verification step and limitations. The synthesis cannot create or modify candidates, severity, confidence, review state or detector evidence. With no LLM configuration, the same candidate-detail API and frontend remain operational through the fallback.
 
 The Data Quality navigation opens a separate authenticated route for source counts, validation issues and provenance. The Review Audit Trail opens a protected, paginated view of existing append-only reviewer transitions for the latest reviewable detector run. Neither route adds or changes a risk detector.
 

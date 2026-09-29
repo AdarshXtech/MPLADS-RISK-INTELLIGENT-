@@ -66,6 +66,16 @@ def test_investigation_sort_is_a_closed_api_enum():
     ]
 
 
+def test_candidate_detail_api_exposes_grounded_synthesis():
+    operation = app.openapi()["paths"]["/investigation-candidates/{result_id}"]["get"]
+    response_schema = operation["responses"]["200"]["content"]["application/json"][
+        "schema"
+    ]
+    assert response_schema["$ref"].endswith("/CandidateDetail")
+    detail_schema = app.openapi()["components"]["schemas"]["CandidateDetail"]
+    assert "synthesis" in detail_schema["required"]
+
+
 def test_database_dependency_reuses_configured_pool(monkeypatch):
     class FakePool:
         @contextmanager

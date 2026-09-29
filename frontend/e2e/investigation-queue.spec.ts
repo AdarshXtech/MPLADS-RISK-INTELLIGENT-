@@ -40,6 +40,9 @@ test("reviewer can filter, paginate, inspect evidence and save an action", async
   await page.getByRole("button", { name: "Apply filters" }).click();
   await expect(page.locator(".queue-table").getByText(`Synthetic community hall ${candidateNumber}`, { exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Review evidence" }).first().click();
+  await expect(page.getByRole("heading", { name: "Administrative brief" })).toBeVisible();
+  await expect(page.getByText("Deterministic synthesis", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Verification checklist" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Why this was flagged" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Duplicate work comparison and location evidence" })).toBeVisible();
   await expect(page.getByText("Location status", { exact: true }).first()).toBeVisible();

@@ -47,7 +47,10 @@ def record(number):
 
 
 @pytest.fixture
-def investigation_connection():
+def investigation_connection(monkeypatch):
+    monkeypatch.delenv("LLM_API_KEY", raising=False)
+    monkeypatch.delenv("LLM_MODEL_NAME", raising=False)
+    monkeypatch.delenv("LLM_BASE_URL", raising=False)
     if not os.environ.get("TEST_DATABASE_URL"):
         pytest.skip("TEST_DATABASE_URL not configured")
     import psycopg
@@ -108,6 +111,9 @@ def test_queue_lists_real_detector_evidence(investigation_connection):
     detail = candidate_detail(connection, result_id)
     assert len(detail.source_records) == 2
     assert detail.source_records[0].location["status"] == "ADMINISTRATIVE_ONLY"
+    assert detail.synthesis.generation_mode == "deterministic_fallback"
+    assert detail.synthesis.summary_brief == detail.explanation
+    assert detail.synthesis.verification_checklist == [detail.verification_step]
 
 
 def test_queue_filters_location_status_and_locality(investigation_connection):

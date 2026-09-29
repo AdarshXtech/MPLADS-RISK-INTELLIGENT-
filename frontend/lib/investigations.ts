@@ -71,6 +71,13 @@ export type CandidateDetail = Candidate & {
   evidence: Record<string, unknown>;
   verification_step: string;
   limitations: string[];
+  synthesis: {
+    summary_brief: string;
+    primary_concerns: string[];
+    verification_checklist: string[];
+    data_limitations: string[];
+    generation_mode: "validated_llm" | "deterministic_fallback";
+  };
   source_records: Array<{
     source_sha256: string;
     parser_version: string;

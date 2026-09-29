@@ -1,5 +1,18 @@
 # Technical decisions
 
+## 2026-09-30: Add grounded synthesis after authoritative detection
+
+- **Decision:** Add an isolated optional explanation module to candidate detail. Deterministic and statistical detectors remain the only source of candidates and evidence; generated prose is accepted only after structured validation and deterministic grounding checks, with an always-available template fallback.
+- **Problem:** Detector results are auditable but require officers to interpret evidence, limitations and verification guidance across several sections. A concise brief can reduce that reading cost, but generated content must not create facts, scores, flags or accusations.
+- **Alternatives considered:** Put an LLM inside detector execution, persist generated prose beside immutable results, return unvalidated free text, add a provider SDK, or use deterministic templates only. The first three weaken the detection and audit boundary; a provider SDK is unnecessary; templates alone do not support the requested optional synthesis.
+- **Selected approach and reason:** `backend.explainer` receives a bounded typed view of an already loaded result, requests strict JSON only when all provider settings exist, validates identifiers, figures, amounts, percentages and language, and falls back to existing detector fields for every failure. Candidate detail exposes the synthesis without changing its original evidence.
+- **Library selection and reason:** Reuse Pydantic and Python `urllib.request`. No AI framework, provider SDK, microservice, schema migration or new dependency is required.
+- **Trade-offs:** A configured provider adds bounded latency to candidate-detail requests and receives the explicitly grounded source facts. Deterministic validation can verify identifiers and numeric claims but does not independently prove every semantic paraphrase, so original evidence remains visible and provider approval is required before external use.
+- **Performance impact:** Queue listing and detection are unchanged. Only candidate detail can make one provider request, bounded to 1 to 30 seconds and defaulting to 8 seconds. Unconfigured environments return the fallback without network access.
+- **Maintainability impact:** Provider transport, prompt construction, validation and fallback are contained in one module with unit tests. The existing API response adds one typed `synthesis` object.
+- **Security impact:** The LLM key remains server-only and is never logged or sent to the frontend. Logs contain only failure classes. Enabling a provider requires approval of data location, retention and handling terms.
+- **Affected files:** `backend/src/backend/explainer.py`, `backend/src/backend/investigations.py`, explainer and investigation tests, candidate-detail frontend types/UI/browser fixture/test, backend environment example, PRD, detector, architecture, technology, deployment, flow, decision and session documentation. Detector logic, staging, reviewed-location logic and database schemas are unchanged.
+
 ## 2026-09-28: Size the Data Quality analysis rail by its parent layout
 
 - **Decision:** Render the constrained desktop analysis rail as one column, allow two columns only when the parent command layout has reflowed to full width, and use one column on phones.

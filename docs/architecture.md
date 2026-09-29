@@ -1,6 +1,6 @@
 # Architecture
 
-Updated 2026-09-26. Distinguish the existing implementation from the intended design.
+Updated 2026-09-30. Distinguish the existing implementation from the intended design.
 
 ## Existing system
 
@@ -15,6 +15,12 @@ The ingestion API exposes only aggregate source metadata. The Next.js Command Ce
 The supplied Stitch references are reimplemented in the existing Next.js routes. `QueueShell` owns the dark product/session header and light navigation. CSS reflows the evidence view between a wide evidence/review split and a single column. The new `PasswordField` manages visibility locally; `SubmitButton` reads React form pending state without changing the login/review Server Actions. Lucide provides navigation/action icons. All metrics and source comparisons retain the existing API boundary. See [design.md](design.md) for tokens, page ownership and excluded illustrative reference content.
 
 The current Suchak AI identity is shared by `Brand`, page metadata and the authenticated shell. `ReviewOverview` uses the existing investigation summary, without a new analytics endpoint. `LocationComparison` dynamically loads a browser-only Leaflet canvas and local India reference GeoJSON. Only verified source coordinates create A/B markers; selecting another pair automatically refits the map, redraws its line and recalculates separation. The Next.js source route checks the signed session and candidate/source membership before returning a private, no-store record from the existing protected candidate API. The Review Audit Trail reads existing append-only events for the latest reviewable run through a protected, paginated endpoint. Neither view changes detector output or review persistence.
+
+## Implemented grounded synthesis boundary
+
+`candidate_detail()` first completes the existing parameterised PostgreSQL reads for immutable detector evidence, source provenance and review history. It then passes a bounded typed context to `backend.explainer.synthesise_candidate()`. The explainer has no database dependency and receives no method capable of changing detector results. It either calls one configured OpenAI-compatible chat-completions endpoint or immediately constructs a deterministic fallback.
+
+The provider request contains only the detector explanation, configured fields, existing evidence, Work IDs, selected sanction facts, available location facts, verification guidance and limitations. API credentials remain in backend environment variables and are never returned to Next.js or the browser. Pydantic rejects malformed output, and deterministic guards reject ungrounded identifiers and figures before the response reaches `CandidateDetail`. The frontend labels the result as validated AI synthesis or deterministic synthesis and continues to display the unchanged detector evidence beside it.
 
 ## Intended design, not implemented
 

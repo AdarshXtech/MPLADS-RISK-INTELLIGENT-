@@ -21,3 +21,7 @@ frontend/playwright-report/
 **/.ruff_cache/
 **/.venv/
 graphify-out/
+
+# Local refactoring assistant state and accidental test-directory npm metadata.
+.refact/
+backend/tests/package-lock.json
