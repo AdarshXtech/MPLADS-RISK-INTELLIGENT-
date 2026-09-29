@@ -15,8 +15,9 @@ async function candidate(page: Page) {
 async function signIn(page: Page) {
   await page.goto("/login");
   await expect(page).toHaveTitle(/Suchak AI/);
-  await expect(page.getByRole("img", { name: "Suchak AI", exact: true })).toBeVisible();
-  expect(await page.getByRole("img", { name: "Suchak AI", exact: true }).evaluate((image) => (image as HTMLImageElement).naturalWidth)).toBe(1254);
+  const brand = page.locator(".login-brand");
+  await expect(brand.getByText("MPLADS Risk", { exact: true })).toBeVisible();
+  await expect(brand.locator(".brand-mark")).toHaveText("M");
   await page.getByLabel("Username").fill(process.env.MPLADS_E2E_USERNAME!);
   await page.getByLabel("Password", { exact: true }).fill(process.env.MPLADS_E2E_PASSWORD!);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
