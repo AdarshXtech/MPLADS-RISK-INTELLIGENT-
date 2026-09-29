@@ -2,13 +2,19 @@
 
 This document describes the implementation that exists in the repository on 2026-09-30. It does not describe planned behaviour as if it were implemented.
 
+## Shared interface rendering
+
+All authenticated routes still render through `QueueShell` and use the same server data and actions. The shared shell now applies the supplied navy and indigo civic-tech visual system through existing CSS tokens and components. The `Brand` component renders a text and monogram identity instead of cropping a large raster image. Login, command centre, data quality, investigation queue, candidate evidence and audit history retain their existing routes, controls, loading states, error states, empty states and request flow.
+
+The visual change adds no navigation destination, form field, detector result, security tier, statutory claim or review action. Desktop keeps the persistent top navigation and operational sidebar. Below 70rem the sidebar becomes the existing route bar, and evidence, metrics, tables and reviewer controls continue to reflow into the established tablet and mobile representations.
+
 ## Grounded candidate synthesis
 
 Authenticated candidate page -> Next.js server-only `getCandidate()` -> protected FastAPI `GET /investigation-candidates/{result_id}` -> existing `candidate_detail()` SQL reads -> immutable detector evidence, source records and review history -> `build_grounded_context()` -> optional configured LLM request -> `GeneratedSynthesis` schema validation -> identifier, figure, amount, percentage and language guardrails -> `CandidateSynthesis` in the existing detail response.
 
 If the provider is unconfigured, unavailable, times out, returns malformed JSON or fails validation, `deterministic_fallback()` returns the stored detector explanation, evidence-derived factors, existing verification step and existing limitations. The route remains available and retains the same review authentication. Neither path calls `detect()`, updates PostgreSQL, changes the candidate flag, changes severity or confidence, or affects review state and queue order.
 
-All authenticated frontend routes render through `QueueShell`. Its Suchak AI header exposes Overview, Risk Triage, Audit Trail and Source Quality; the desktop operational sidebar exposes the same routes with their product names. Below 70rem the header navigation is removed and the sidebar navigation becomes a full-width route bar. Candidate evidence retains a two-column evidence and reviewer layout on wide screens and stacks it on smaller screens.
+The shared header exposes Overview, Risk Triage, Audit Trail and Source Quality; the desktop operational sidebar exposes the same routes with their product names. Below 70rem the header navigation is removed and the sidebar navigation becomes a full-width route bar. Candidate evidence retains a two-column evidence and reviewer layout on wide screens and stacks it on smaller screens.
 
 `/audit-trail` calls the protected `GET /review-events` endpoint through the existing server-only API client. FastAPI selects the latest reviewable detector run, joins its append-only `mplads_review_event` rows to detector evidence, applies parameterised search and target-status filtering, orders newest first and paginates before returning data. The page provides loading, empty, error, filter, mobile-card and pagination states. It is explicitly labelled as administrative review history, not a statutory or cryptographically certified ledger.
 

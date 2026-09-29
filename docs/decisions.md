@@ -1,5 +1,18 @@
 # Technical decisions
 
+## 2026-09-30: Apply the supplied civic-tech visual system without changing product behaviour
+
+- **Decision:** Restyle the existing authenticated workspace and sign-in view using the supplied MPLADS design references: midnight navy navigation, indigo active states, pale technical-grid canvas, compact bordered surfaces, restrained semantic status colours and denser administrative typography. Retain every existing route, control, data field, API call and responsive representation.
+- **Problem:** The working interface used the correct administrative structure but its teal identity, image-based brand treatment and component hierarchy did not match the supplied high-trust intelligence-console references.
+- **Alternatives considered:** Copy the supplied HTML directly, add the mock-ups' unimplemented controls and statutory claims, redesign each route independently, or apply a shared visual layer to the existing components. Direct copying would bypass the working application and accessibility behaviour; copying fictional controls or claims would violate product boundaries; page-specific redesigns would drift.
+- **Selected approach and reason:** Reimplement the shared visual language in the existing Next.js component and CSS system. Replace the cropped image brand with a semantic text and monogram treatment, map the supplied palette to existing design tokens, and refine the shared header, sidebar, cards, filters, tables, login surface and evidence layout. This gives all current states the same visual system without changing their behaviour.
+- **Library selection and reason:** Not applicable. Existing React, Lucide icons and CSS are sufficient; no visual or runtime dependency was added.
+- **Trade-offs:** Geist remains the installed typeface rather than adding another web-font request for Plus Jakarta Sans and JetBrains Mono. The existing sans and mono roles reproduce the hierarchy without adding a network or build dependency.
+- **Performance impact:** The image-based brand is removed from rendered navigation. The faint canvas grid is CSS-only. No JavaScript, data request or client processing was added.
+- **Maintainability impact:** Shared tokens and shell selectors continue to style all routes. Route-specific data and interaction code remain unchanged.
+- **Security impact:** None. Unsupported clearance, cryptographic, surveillance and legal-attestation claims from the visual references were not copied.
+- **Affected files:** `frontend/app/brand.tsx`, `frontend/app/globals.css`, `docs/decisions.md`, `docs/flow.md` and `docs/CODEX_LOG.md`.
+
 ## 2026-09-30: Add grounded synthesis after authoritative detection
 
 - **Decision:** Add an isolated optional explanation module to candidate detail. Deterministic and statistical detectors remain the only source of candidates and evidence; generated prose is accepted only after structured validation and deterministic grounding checks, with an always-available template fallback.

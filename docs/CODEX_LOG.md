@@ -1,5 +1,14 @@
 # Codex log
 
+## 2026-09-30: Rework the interface from supplied MPLADS design references
+
+- **Task:** Study seven supplied Stitch screen implementations and their design-system files, then update the existing interface to match their visual language without adding or changing product features.
+- **Files modified:** `frontend/app/brand.tsx`, `frontend/app/globals.css`, `docs/decisions.md`, `docs/flow.md` and this log.
+- **Implementation:** Replaced the cropped raster brand with an accessible text and monogram treatment, with the monogram aligned to the left of the brand text in the header and login surfaces. Mapped the shared interface to a midnight navy, indigo, slate, red, amber and green token system; tightened the top navigation and operational sidebar; added the pale technical-grid canvas; and refined cards, filters, tables, login, evidence comparison and reviewer panels. All existing content, controls, API calls and responsive route behaviour remain in place.
+- **Scope boundary:** Treated the supplied files as visual references only. Did not copy their fabricated financial figures, security-clearance claims, cryptographic claims, legal assertions, new navigation destinations or non-working actions.
+- **Verification:** ESLint and TypeScript passed. Two focused Edge tests passed for password keyboard access, desktop evidence layout, mobile stacking, map values and review-save state. The 13-test responsive and Data Quality navigation run passed at 320, 390, 640, 768, 844, 1024, 1280, 1440 and 1920-pixel widths with overflow, clipping, keyboard, loading, empty, error and success assertions. A final desktop route capture passed and the rendered login, queue, command centre, data quality, evidence and audit pages were inspected against the references.
+- **Known limitations:** The design references specify Plus Jakarta Sans and JetBrains Mono. The implementation retains the existing bundled Geist sans and mono roles to avoid a new font download and build dependency.
+
 ## 2026-09-30: Initialise reviewed-location schema in Neon
 
 - **Task:** Investigate and correct the missing `mplads_work_location` table in the deployed Neon `public` schema.
