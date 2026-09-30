@@ -2,7 +2,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { requireReviewer } from "@/lib/auth";
 import {
-  apiTimeoutMs,
+  fetchWithColdStartRetry,
   getInvestigationSummary,
   resolveApiBaseUrl,
   type InvestigationSummary,
@@ -67,9 +67,8 @@ async function getOverview(view: "command-centre" | "data-quality"): Promise<Ove
   const baseUrl = resolveApiBaseUrl();
   try {
     const [response, summary] = await Promise.all([
-      fetch(`${baseUrl}/data-overview`, {
+      fetchWithColdStartRetry(`${baseUrl}/data-overview`, {
         cache: "no-store",
-        signal: AbortSignal.timeout(apiTimeoutMs()),
       }),
       view === "command-centre" ? getInvestigationSummary() : Promise.resolve(null),
     ]);

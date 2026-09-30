@@ -221,12 +221,35 @@ h3 { font-size: 0.88rem; }
 .error-panel h2, .empty-panel h2 { font-size: 1.1rem; }
 .error-panel p, .empty-panel p { max-width: 42rem; margin-top: 0.6rem; color: var(--muted); font-size: 0.84rem; line-height: 1.65; }
 .retry-link { display: inline-flex; align-items: center; margin-top: 1rem; border-radius: 5px; background: var(--brand-900); color: white; padding: 0.7rem 0.9rem; font-size: 0.8rem; font-weight: 650; text-decoration: none; }
-.skeleton { min-height: 1rem; border-radius: 3px; background: #e3e9ef; }
+.skeleton { display: block; min-height: 1rem; border-radius: 3px; background: linear-gradient(90deg, #e3e9ef 0%, #f4f7fb 48%, #e3e9ef 100%); background-size: 220% 100%; animation: skeleton-pulse 1.6s ease-in-out infinite; }
 .skeleton-heading { width: min(30rem, 80%); height: 2.2rem; }
 .skeleton-copy { width: min(42rem, 95%); margin-top: 0.75rem; }
 .loading-grid { display: grid; gap: 0.8rem; margin-top: 1.5rem; }
 .loading-grid .skeleton-card { min-height: 7rem; border: 1px solid var(--line); border-radius: 6px; background: white; padding: 1rem; }
 .loading-grid .skeleton { margin-top: 0.7rem; }
+.skeleton-heading-row .skeleton-heading { margin-top: 0.45rem; }
+.skeleton-view-label { min-width: 11rem; color: transparent; }
+.skeleton-line { width: 100%; }
+.skeleton-kicker { width: 7rem; height: 0.7rem; min-height: 0.7rem; }
+.skeleton-title { width: min(18rem, 85%); height: 1.05rem; min-height: 1.05rem; }
+.skeleton-chip { width: 6rem; height: 1.6rem; }
+.skeleton-number { width: 5.5rem; height: 1.8rem; }
+.skeleton-button { width: 8rem; height: 44px; }
+.skeleton-input { height: 44px; }
+.skeleton-back-link { width: 11rem; height: 1.1rem; margin-bottom: 0.95rem; }
+.skeleton-panel .panel-body { display: grid; gap: 0.7rem; }
+.skeleton-panel .panel-body .skeleton-line:nth-child(even) { width: 76%; }
+.skeleton-scope .skeleton-line + .skeleton-line { margin-top: 0.45rem; }
+.skeleton-notice .skeleton-title { margin-bottom: 0.55rem; }
+.skeleton-metric .skeleton-line + .skeleton-line { margin-top: 0.7rem; }
+.skeleton-filter .filter-heading { width: 10rem; align-self: center; }
+.skeleton-table { display: grid; }
+.skeleton-table-row { display: grid; grid-template-columns: repeat(var(--skeleton-columns, 4), minmax(0, 1fr)); gap: 1rem; border-bottom: 1px solid var(--line); padding: 0.9rem 1rem; }
+.skeleton-table-row:last-child { border-bottom: 0; }
+.skeleton-table-head { background: #f1f5f9; }
+.skeleton-card-list { padding: 1rem; }
+.skeleton-case-summary .skeleton-line + .skeleton-line { margin-top: 0.55rem; }
+@keyframes skeleton-pulse { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 
 /* Authentication uses the reference's restrained grid and centred form. */
 .auth-shell { display: flex; flex-direction: column; min-height: 100vh; }

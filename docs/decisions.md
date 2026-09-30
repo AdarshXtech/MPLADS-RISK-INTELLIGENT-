@@ -1,5 +1,18 @@
 # Technical decisions
 
+## 2026-09-30: Retry read-only frontend API calls during short cold-start windows
+
+- **Decision:** Add a bounded server-side retry window for idempotent frontend reads and replace generic loading placeholders with route-shaped skeletons for Command Centre, Data Quality, Investigation Queue, candidate evidence and Review Audit Trail.
+- **Problem:** Neon compute can become inactive after a short idle period and resume quickly. A first visitor could see `Data service unavailable` even when the database would be reachable moments later. Generic skeleton cards also did not match the shape of each page, making the wait feel like an outage rather than normal loading.
+- **Alternatives considered:** Keep the manual Retry connection flow, add a full-screen loading overlay, retry all requests including review actions, cache stale data, or move the database/platform immediately. Manual retry makes normal cold starts look broken; an overlay hides navigation context; retrying state-changing POST actions risks duplicate review events; caching can display stale administrative state; platform migration is larger than the immediate reliability issue.
+- **Selected approach and reason:** Retry only GET and HEAD requests through the server-only frontend API client when the response is a transient service status or fetch failure. Keep retries bounded with short delays, then show the existing honest error panel if the service is still unavailable. Render page-specific skeletons through Next.js loading routes while the server component is waiting.
+- **Library selection and reason:** Not applicable. Existing Next.js server components, native `fetch`, `AbortSignal.timeout` and CSS are sufficient.
+- **Trade-offs:** A real outage now takes a few seconds longer before the error panel appears. Non-idempotent review-save requests are intentionally not retried, so a reviewer may still need to resubmit after a transient write failure.
+- **Performance impact:** Normal warm requests are unchanged. Cold read requests may add up to the configured retry delay window before succeeding or failing. Skeletons are CSS-only and reserve stable page space.
+- **Maintainability impact:** The retry policy is centralised in `frontend/lib/investigations.ts`, and the shared skeleton components keep route loading states consistent without duplicating large markup blocks.
+- **Security impact:** No credentials move to the browser. The review API key remains server-only. Retry logic does not change backend authorisation or database access.
+- **Affected files:** `frontend/lib/investigations.ts`, `frontend/lib/data-overview.ts`, `frontend/app/command-centre/dashboard.tsx`, route loading files, `frontend/app/loading-skeletons.tsx`, `frontend/app/globals.css`, `frontend/e2e/mock-api.mjs`, `frontend/e2e/responsiveness.spec.ts`, `docs/decisions.md`, `docs/flow.md` and `docs/CODEX_LOG.md`.
+
 ## 2026-09-30: Apply the supplied civic-tech visual system without changing product behaviour
 
 - **Decision:** Restyle the existing authenticated workspace and sign-in view using the supplied MPLADS design references: midnight navy navigation, indigo active states, pale technical-grid canvas, compact bordered surfaces, restrained semantic status colours and denser administrative typography. Retain every existing route, control, data field, API call and responsive representation.

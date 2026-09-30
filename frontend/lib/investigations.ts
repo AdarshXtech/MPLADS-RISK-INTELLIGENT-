@@ -129,6 +129,39 @@ export function apiTimeoutMs(): number {
   return Number.isFinite(val) && val > 0 ? val : 45000;
 }
 
+function retryDelaysMs(): number[] {
+  const configured = process.env.MPLADS_API_RETRY_DELAYS_MS?.split(",")
+    .map((item) => Number(item.trim()))
+    .filter((item) => Number.isFinite(item) && item > 0 && item <= 10000);
+  return configured?.length ? configured : [600, 1200, 2000];
+}
+
+function isRetryableStatus(status: number): boolean {
+  return [408, 429, 500, 502, 503, 504].includes(status);
+}
+
+function wait(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+export async function fetchWithColdStartRetry(url: string, init: RequestInit = {}): Promise<Response> {
+  const { signal: _signal, ...baseInit } = init;
+  const delays = retryDelaysMs();
+  for (let attempt = 0; attempt <= delays.length; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        ...baseInit,
+        signal: AbortSignal.timeout(apiTimeoutMs()),
+      });
+      if (!isRetryableStatus(response.status) || attempt === delays.length) return response;
+    } catch (error) {
+      if (attempt === delays.length) throw error;
+    }
+    await wait(delays[attempt]);
+  }
+  throw new Error("Review service request failed");
+}
+
 function configuration() {
   const key = process.env.MPLADS_REVIEW_API_KEY;
   if (!key) throw new Error("MPLADS_REVIEW_API_KEY is not configured");
@@ -140,12 +173,16 @@ function configuration() {
 
 async function requestResponse(path: string, init?: RequestInit): Promise<Response> {
   const { baseUrl, key } = configuration();
-  const response = await fetch(`${baseUrl}${path}`, {
+  const method = init?.method?.toUpperCase() ?? "GET";
+  const requestInit: RequestInit = {
     ...init,
     cache: "no-store",
     signal: AbortSignal.timeout(apiTimeoutMs()),
     headers: { "Content-Type": "application/json", "X-MPLADS-Review-Key": key, ...init?.headers },
-  });
+  };
+  const response = method === "GET" || method === "HEAD"
+    ? await fetchWithColdStartRetry(`${baseUrl}${path}`, requestInit)
+    : await fetch(`${baseUrl}${path}`, requestInit);
   if (!response.ok) {
     const problem = await response.json().catch(() => ({}));
     throw new Error(typeof problem.detail === "string" ? problem.detail : "Review service request failed");

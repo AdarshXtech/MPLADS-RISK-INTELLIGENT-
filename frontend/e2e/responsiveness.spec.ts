@@ -47,6 +47,24 @@ async function capture(page: Page, info: TestInfo, size: string, state: string) 
 test.beforeEach(async ({ page }) => { await scenario(page, {}, true); });
 test.afterEach(async ({ page }) => { await scenario(page, {}, true); });
 
+test("temporary database wake-up failures show skeletons and recover", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await signIn(page);
+
+  await scenario(page, { "/data-overview": { transientFailures: 2 } });
+  await page.goto("/command-centre", { waitUntil: "commit" });
+  await expect(page.getByRole("main", { name: "Loading command centre" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Investigation workload", exact: true })).toBeVisible();
+  await expect(page.locator(".error-panel")).toHaveCount(0);
+  await expect(page.locator(".global-header .live-state")).toHaveText("Data service connected");
+
+  await scenario(page, { "/investigation-candidates": { transientFailures: 2 } });
+  await page.goto("/investigation-queue", { waitUntil: "commit" });
+  await expect(page.getByRole("main", { name: "Loading Investigation Queue" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Candidates requiring review", exact: true })).toBeVisible();
+  await expect(page.locator(".error-panel")).toHaveCount(0);
+});
+
 for (const size of sizes) {
   test(`responsive routes: ${size.name} ${size.width}x${size.height}`, async ({ page }, info) => {
     test.setTimeout(90_000);
@@ -161,6 +179,7 @@ for (const size of sizes.filter(({ name }) => ["phone", "tablet", "desktop"].inc
       ["/data-overview", "/command-centre", "Loading command centre", "18-command-loading"],
       ["/data-overview", "/data-quality", "Loading Data Quality", "20-data-quality-loading"],
       ["/investigation-candidates", "/investigation-queue", "Loading Investigation Queue", "21-queue-loading"],
+      ["/investigation-candidates/synthetic-candidate-01", "/investigation-queue/synthetic-candidate-01", "Loading candidate evidence", "21-evidence-loading"],
       ["/review-events", "/audit-trail", "Loading Review Audit Trail", "22-audit-trail-loading"],
     ]) {
       await scenario(page, { [api]: { delay: 2500 } });

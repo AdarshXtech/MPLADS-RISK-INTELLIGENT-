@@ -1,5 +1,14 @@
 # Codex log
 
+## 2026-09-30: Add cold-start read recovery and route-shaped skeletons
+
+- **Task:** Prevent short Neon or backend wake-up windows from immediately surfacing as `Data service unavailable`, and replace generic loading blocks with page-specific skeleton states.
+- **Files created:** `frontend/app/loading-skeletons.tsx`, `frontend/app/investigation-queue/[id]/loading.tsx`.
+- **Files modified:** `frontend/lib/investigations.ts`, `frontend/lib/data-overview.ts`, `frontend/app/command-centre/dashboard.tsx`, route loading files, `frontend/app/globals.css`, `frontend/e2e/mock-api.mjs`, `frontend/e2e/responsiveness.spec.ts`, `docs/decisions.md`, `docs/flow.md` and this log.
+- **Implementation:** Added bounded retries for idempotent frontend read requests only. Command Centre, Data Quality, Investigation Queue, candidate evidence and Review Audit Trail now render skeletons shaped like their final layouts while server data is pending. Existing unavailable-service panels remain after retries fail.
+- **Boundary:** Review-save POST requests are not retried to avoid duplicate audit events. No data is cached, fabricated or shown before the backend returns real values.
+- **Verification:** ESLint passed for app and updated E2E files. TypeScript passed. `next build --webpack` passed after granting network access for the existing Next font download; the default Turbopack build failed locally with a Windows process-spawn access error before application compilation. The updated responsiveness suite passed 13 Edge tests, including temporary read failures that recover after skeleton loading, loading states, hard service errors, empty states, mobile/tablet/desktop layouts and long evidence reflow. The focused investigation-queue suite passed three Edge tests for filtering, evidence review, audit navigation, export and phone layout.
+
 ## 2026-09-30: Rework the interface from supplied MPLADS design references
 
 - **Task:** Study seven supplied Stitch screen implementations and their design-system files, then update the existing interface to match their visual language without adding or changing product features.

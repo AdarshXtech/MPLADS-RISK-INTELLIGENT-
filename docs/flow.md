@@ -8,6 +8,14 @@ All authenticated routes still render through `QueueShell` and use the same serv
 
 The visual change adds no navigation destination, form field, detector result, security tier, statutory claim or review action. Desktop keeps the persistent top navigation and operational sidebar. Below 70rem the sidebar becomes the existing route bar, and evidence, metrics, tables and reviewer controls continue to reflow into the established tablet and mobile representations.
 
+## Cold-start read recovery and skeleton loading
+
+Next.js server components call the FastAPI backend through server-only helpers in `frontend/lib/investigations.ts`. Idempotent `GET` and `HEAD` calls now use `fetchWithColdStartRetry()`, which retries transient service responses such as 503 with short bounded delays before returning the final response. Direct Data Overview reads in `frontend/lib/data-overview.ts` and `frontend/app/command-centre/dashboard.tsx` use the same helper. If all attempts fail, the existing route error panels still render with `connected=false`.
+
+State-changing review actions continue to use a single request. `POST /investigation-candidates/{id}/events` is not automatically retried because a duplicated write could create a second audit event if the first request reached the backend but the response was lost.
+
+While the server route is waiting, Next.js displays route-specific skeletons from `frontend/app/loading-skeletons.tsx`. Command Centre, Data Quality, Investigation Queue, candidate evidence and Review Audit Trail each reserve the same broad page structure as their final view: headings, filters, metrics, source tables, evidence panels, reviewer rail or audit rows as appropriate. Skeletons contain no data values, controls or claims, and they disappear when real backend data is available.
+
 ## Grounded candidate synthesis
 
 Authenticated candidate page -> Next.js server-only `getCandidate()` -> protected FastAPI `GET /investigation-candidates/{result_id}` -> existing `candidate_detail()` SQL reads -> immutable detector evidence, source records and review history -> `build_grounded_context()` -> optional configured LLM request -> `GeneratedSynthesis` schema validation -> identifier, figure, amount, percentage and language guardrails -> `CandidateSynthesis` in the existing detail response.

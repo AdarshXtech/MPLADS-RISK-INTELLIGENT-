@@ -45,6 +45,10 @@ createServer(async (request, response) => {
   }
   const scenario = scenarios.get(pathname);
   if (scenario?.delay) await new Promise((resolve) => setTimeout(resolve, scenario.delay));
+  if (scenario?.transientFailures > 0) {
+    scenario.transientFailures -= 1;
+    return send(response, scenario.transientStatus ?? 503, { detail: "Synthetic cold-start failure. Please retry." });
+  }
   if (scenario?.status) return send(response, scenario.status, { detail: "Synthetic service failure. Please retry." });
   if (scenario?.body) return send(response, 200, scenario.body);
   if (request.method === "GET" && request.url === "/data-overview") return send(response, 200, {

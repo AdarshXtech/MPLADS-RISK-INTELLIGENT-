@@ -1,7 +1,7 @@
 import "server-only";
 
 import { connection } from "next/server";
-import { apiTimeoutMs, resolveApiBaseUrl } from "@/lib/investigations";
+import { fetchWithColdStartRetry, resolveApiBaseUrl } from "@/lib/investigations";
 
 export type SourceReport = {
   source_file: string;
@@ -56,9 +56,8 @@ function isDataOverview(value: unknown): value is DataOverview {
 export async function getDataOverview(): Promise<DataOverviewResult> {
   await connection();
   try {
-    const response = await fetch(`${resolveApiBaseUrl()}/data-overview`, {
+    const response = await fetchWithColdStartRetry(`${resolveApiBaseUrl()}/data-overview`, {
       cache: "no-store",
-      signal: AbortSignal.timeout(apiTimeoutMs()),
     });
     if (!response.ok) return { status: "error" };
     const data: unknown = await response.json();
